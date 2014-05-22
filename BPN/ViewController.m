@@ -1,9 +1,12 @@
-ios-BPN-Algorithm
-=================
+//
+//  ViewController.m
+//  BPN
+//
+//  Created by Kalvar on 13/6/28.
+//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
+//
 
-Back Propagation Neural Network ( BPN ) is one of neural-network algorithms.
-
-``` objective-c
+#import "ViewController.h"
 #import "KRBPN.h"
 
 @interface ViewController ()
@@ -109,27 +112,27 @@ Back Propagation Neural Network ( BPN ) is one of neural-network algorithms.
     [_krBPN removeTrainedNetwork];
     
     //Start the training network, and it won't be saving the trained-network when finished.
-    [_krBPN training];
+    //[_krBPN training];
     
     //Start the training network, and it will auto-saving the trained-network when finished.
     [_krBPN trainingDoneSave];
     
     //If you wanna pause the training.
-    [_krBPN pause];
+    //[_krBPN pause];
     
     //If you wanna continue the paused training.
-    [_krBPN continueTraining];
+    //[_krBPN continueTraining];
     
     //If you wanna reset the network back to initial situation.
-    [_krBPN reset];
+    //[_krBPN reset];
     
     //When the training finished, to save the trained-network into NSUserDefaults.
-    [_krBPN saveTrainedNetwork];
+    //[_krBPN saveTrainedNetwork];
     
     //If you wanna recover the trained-network data.
-    [_krBPN recoverTrainedNetwork];
-
+    //[_krBPN recoverTrainedNetwork];
     //Or you wanna use the KRBPNTrainedNetwork object to recover the training data.
+    /*
     KRBPNTrainedNetwork *_trainedNetwork = [[KRBPNTrainedNetwork alloc] init];
     _trainedNetwork.inputs = [NSMutableArray arrayWithObjects:
                               @[@1],
@@ -137,18 +140,18 @@ Back Propagation Neural Network ( BPN ) is one of neural-network algorithms.
                               @[@1],
                               nil];
     [_krBPN recoverTrainedNetwork:_trainedNetwork];
-
+    */
+    
     //To remove the saved trained-network.
-    [_krBPN removeTrainedNetwork];
-
+    //[_krBPN removeTrainedNetwork];
+    
 }
+
+- (void)didReceiveMemoryWarning
+
+{
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
 @end
-```
-
-## Version
-
-V1.0
-
-## License
-
-MIT.
