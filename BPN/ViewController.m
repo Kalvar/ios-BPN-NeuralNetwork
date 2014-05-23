@@ -113,7 +113,7 @@
     //Remove your testing trained-network records.
     [_krBPN removeTrainedNetwork];
     
-    //Start the random weights, biases
+    //Start the training, and random the weights, biases, if you use this method that you won't need to setup any weights and biases before.
     //[_krBPN trainingWithRandom];
     
     //Start the training network, and it won't be saving the trained-network when finished.

@@ -24,11 +24,11 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
     
     //各輸入向量陣列值
     _krBPN.inputs = [NSMutableArray arrayWithObjects:
-                     //X1
+                     //Input Pattern 1
                      @[@1, @2, @0.5, @1.2],
-                     //X2
+                     //Input Pattern 2
                      @[@0, @1, @0.3, @-0.9],
-                     //X3
+                     //Input Pattern 3
                      @[@1, @-3, @-1, @0.4],
                      nil];
     /*
@@ -43,6 +43,9 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
      *   - W34 : 輸入層 X3 到隱藏層 Net 4
      *   - W35 : 輸入層 X3 到隱藏層 Net 5
      *
+     *   - W44 : 輸入層 X4 到隱藏層 Net 4
+     *   - W45 : 輸入層 X4 到隱藏層 Net 5
+     *
      *   - W46 : 隱藏層 Net 4 到輸出層的 Net 6
      *   - W56 : 隱藏層 Net 5 到輸出層的 Net 6
      *
@@ -55,6 +58,8 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
                             @[@0.4, @0.1],
                             //W34, W35
                             @[@-0.5, @0.2],
+                            //W44, W45
+                            @[@-0.1, @0.3],
                             nil];
     //隱藏層神經元的偏權值
     _krBPN.hiddenBiases  = [NSMutableArray arrayWithObjects:
