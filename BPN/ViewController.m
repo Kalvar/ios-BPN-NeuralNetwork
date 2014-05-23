@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BPN
+//  BPN V1.1
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
@@ -23,18 +23,15 @@
 {
     [super viewDidLoad];
     
-    /*
-     * @ 本參數設定約耗去 200 KB Memory
-     */
 	_krBPN = [KRBPN sharedNetwork];
     
     //各輸入向量陣列值
     _krBPN.inputs = [NSMutableArray arrayWithObjects:
-                     //X1
+                     //Input Pattern 1
                      @[@1, @2, @0.5, @1.2],
-                     //X2
+                     //Input Pattern 2
                      @[@0, @1, @0.3, @-0.9],
-                     //X3
+                     //Input Pattern 3
                      @[@1, @-3, @-1, @0.4],
                      nil];
     /*
@@ -49,6 +46,9 @@
      *   - W34 : 輸入層 X3 到隱藏層 Net 4
      *   - W35 : 輸入層 X3 到隱藏層 Net 5
      *
+     *   - W44 : 輸入層 X4 到隱藏層 Net 4
+     *   - W45 : 輸入層 X4 到隱藏層 Net 5
+     *
      *   - W46 : 隱藏層 Net 4 到輸出層的 Net 6
      *   - W56 : 隱藏層 Net 5 到輸出層的 Net 6
      *
@@ -61,6 +61,8 @@
                             @[@0.4, @0.1],
                             //W34, W35
                             @[@-0.5, @0.2],
+                            //W44, W45
+                            @[@-0.1, @0.3],
                             nil];
     //隱藏層神經元的偏權值
     _krBPN.hiddenBiases  = [NSMutableArray arrayWithObjects:
@@ -85,7 +87,7 @@
     //學習速率
     _krBPN.learningRate     = 0.8f;
     //收斂誤差值 ( 一般是 10^-3 或 10^-6 )
-    _krBPN.convergenceError = 0.001f;
+    _krBPN.convergenceError = 0.00001f;
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
     //每一次的迭代( Every generation-training )
@@ -111,11 +113,14 @@
     //Remove your testing trained-network records.
     [_krBPN removeTrainedNetwork];
     
+    //Start the random weights, biases
+    //[_krBPN trainingWithRandom];
+    
     //Start the training network, and it won't be saving the trained-network when finished.
-    //[_krBPN training];
+    [_krBPN training];
     
     //Start the training network, and it will auto-saving the trained-network when finished.
-    [_krBPN trainingDoneSave];
+    //[_krBPN trainingDoneSave];
     
     //If you wanna pause the training.
     //[_krBPN pause];
@@ -144,7 +149,6 @@
     
     //To remove the saved trained-network.
     //[_krBPN removeTrainedNetwork];
-    
 }
 
 - (void)didReceiveMemoryWarning

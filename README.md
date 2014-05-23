@@ -1,7 +1,7 @@
 ios-BPN-Algorithm
 =================
 
-Back Propagation Neural Network ( BPN ) is one of neural-network algorithms.
+This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ), and also it is one of neural-network algorithms.
 
 ``` objective-c
 #import "KRBPN.h"
@@ -20,9 +20,6 @@ Back Propagation Neural Network ( BPN ) is one of neural-network algorithms.
 {
     [super viewDidLoad];
     
-    /*
-     * @ 本參數設定約耗去 200 KB Memory
-     */
 	_krBPN = [KRBPN sharedNetwork];
     
     //各輸入向量陣列值
@@ -108,6 +105,9 @@ Back Propagation Neural Network ( BPN ) is one of neural-network algorithms.
     //Remove your testing trained-network records.
     [_krBPN removeTrainedNetwork];
     
+    //Start the random weights, biases
+    [_krBPN trainingWithRandom];
+
     //Start the training network, and it won't be saving the trained-network when finished.
     [_krBPN training];
     
@@ -147,7 +147,7 @@ Back Propagation Neural Network ( BPN ) is one of neural-network algorithms.
 
 ## Version
 
-V1.0
+V1.1
 
 ## License
 

@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN ( 倒傳遞類神經網路 ) V0.1 Alpha
+//  BPN V1.1 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
@@ -61,7 +61,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 //隱藏層神經元的偏權值
 @property (nonatomic, strong) NSMutableArray *hiddenBiases;
 //隱藏層有幾顆神經元
-@property (nonatomic, assign) NSInteger countHiddens;
+@property (nonatomic, assign) NSInteger countHiddenNets;
 //輸出層神經元偏權值
 @property (nonatomic, assign) double outputBias;
 //期望值
@@ -90,8 +90,11 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 -(instancetype)init;
 
 #pragma --mark Training Public Methods
+-(void)randomWeights;
 -(void)training;
 -(void)trainingDoneSave;
+-(void)trainingWithRandom;
+-(void)trainingWithRandomAndDoneSave;
 -(void)pause;
 -(void)continueTraining;
 -(void)reset;
