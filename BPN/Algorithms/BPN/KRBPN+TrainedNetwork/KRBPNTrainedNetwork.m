@@ -1,6 +1,6 @@
 //
 //  KRBPNTrainedNetwork.m
-//  BPN V1.1
+//  BPN V1.1.5
 //
 //  Created by Kalvar on 2014/5/22.
 //  Copyright (c) 2014年 Kuo-Ming Lin. All rights reserved.
@@ -45,7 +45,7 @@
 @synthesize hiddenWeights      = _hiddenWeights;
 @synthesize hiddenBiases       = _hiddenBiases;
 @synthesize outputBias         = _outputBias;
-@synthesize targetValue        = _targetValue;
+@synthesize outputGoals        = _outputGoals;
 @synthesize learningRate       = _learningRate;
 @synthesize convergenceError   = _convergenceError;
 @synthesize fOfAlpha           = _fOfAlpha;
@@ -86,7 +86,8 @@
     [self _encodeObject:_hiddenBiases forKey:@"hiddenBiases"];
     
     [self _encodeDouble:_outputBias forKey:@"outputBias"];
-    [self _encodeDouble:_targetValue forKey:@"targetValue"];
+    [self _encodeObject:_outputGoals forKey:@"outputGoals"];
+    
     [self _encodeFloat:_learningRate forKey:@"learningRate"];
     [self _encodeDouble:_convergenceError forKey:@"convergenceError"];
     [self _encodeFloat:_fOfAlpha forKey:@"fOfAlpha"];
@@ -108,7 +109,8 @@
         _hiddenBiases       = [aDecoder decodeObjectForKey:@"hiddenBiases"];
         
         _outputBias         = [aDecoder decodeDoubleForKey:@"outputBias"];
-        _targetValue        = [aDecoder decodeDoubleForKey:@"targetValue"];
+        _outputGoals        = [aDecoder decodeObjectForKey:@"outputGoals"];
+        
         _learningRate       = [aDecoder decodeFloatForKey:@"learningRate"];
         _convergenceError   = [aDecoder decodeDoubleForKey:@"convergenceError"];
         _fOfAlpha           = [aDecoder decodeFloatForKey:@"fOfAlpha"];

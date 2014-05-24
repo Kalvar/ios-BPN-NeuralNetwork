@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V1.1 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V1.1.5 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
@@ -39,19 +39,26 @@ typedef void(^KRBPNEachGeneration)(NSInteger times, NSDictionary *trainedInfo);
  *      - KRBPNTrainedInfoHiddenWeights     : NSMutableArray, 調整後的隱藏層神經元到輸出層神經元的權重值
  *      - KRBPNTrainedInfoHiddenBiases      : NSMutableArray, 調整後的隱藏層神經元的偏權值
  *      - KRBPNTrainedInfoOutputBias        : double,         調整後的輸出層神經元偏權值
+ *      - KRBPNTrainedInfoOutputResults     : NSArray,        輸出結果
  *      - KRBPNTrainedInfoTrainedGeneration : NSInteger,      已訓練到第幾代
+ *
  */
 static NSString *KRBPNTrainedInfoInputWeights      = @"KRBPNTrainedInfoInputWeights";
 static NSString *KRBPNTrainedInfoHiddenWeights     = @"KRBPNTrainedInfoHiddenWeights";
 static NSString *KRBPNTrainedInfoHiddenBiases      = @"KRBPNTrainedInfoHiddenBiases";
 static NSString *KRBPNTrainedInfoOutputBias        = @"KRBPNTrainedInfoOutputBias";
+static NSString *KRBPNTrainedInfoOutputResults     = @"KRBPNTrainedInfoOutputResults";
 static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGeneration";
+
+@protocol KRBPNDelegate;
 
 @interface KRBPN : NSObject
 {
     
 }
 
+//Setup attribute is strong that 'coz we want to keep the delegate when the training run in the other queue.
+@property (nonatomic, strong) id<KRBPNDelegate> delegate;
 //輸入層各向量值之陣列集合
 @property (nonatomic, strong) NSMutableArray *inputs;
 //輸入層各向量值到隱藏層神經元的權重
@@ -64,8 +71,10 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 @property (nonatomic, assign) NSInteger countHiddenNets;
 //輸出層神經元偏權值
 @property (nonatomic, assign) double outputBias;
-//期望值
-@property (nonatomic, assign) double targetValue;
+//輸出層的輸出值( 輸出結果 )
+@property (nonatomic, strong) NSArray *outputResults;
+//所有輸入向量( 每一組訓練資料 )的各別輸出期望值
+@property (nonatomic, strong) NSArray *outputGoals;
 //學習速率
 @property (nonatomic, assign) CGFloat learningRate;
 //收斂誤差值 ( 10^-3, 10^-6 )
@@ -108,5 +117,13 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 #pragma --mark Blocks
 -(void)setTrainingCompletion:(KRBPNTrainingCompletion)_theBlock;
 -(void)setEachGeneration:(KRBPNEachGeneration)_theBlock;
+
+@end
+
+@protocol KRBPNDelegate <NSObject>
+
+@optional
+-(void)krBPNDidTrainFinished:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo totalTimes:(NSInteger)totalTimes;
+-(void)krBPNEachGeneration:(KRBPN*)krBPN trainedInfo:(NSDictionary *)trainedInfo times:(NSInteger)times;
 
 @end

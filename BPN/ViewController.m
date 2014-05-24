@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BPN V1.1
+//  BPN V1.1.5
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
@@ -34,6 +34,13 @@
                      //Input Pattern 3
                      @[@1, @-3, @-1, @0.4],
                      nil];
+    //每一筆輸入向量的期望值( 輸出期望 )
+    _krBPN.outputGoals = @[//Output Goal of Input Pattern 1
+                           @1.0,
+                           //Output Goal of Input Pattern 2
+                           @0.0,
+                           //Output Goal of Input Pattern 3
+                           @1.0];
     /*
      * @ 輸入層、隱藏層、輸出層之間的神經元初始權重
      *
@@ -82,12 +89,12 @@
     //_krBPN.countHiddens;
     //輸出層神經元偏權值, Net 6 for output
     _krBPN.outputBias       = 0.1f;
-    //期望值
-    _krBPN.targetValue      = 1.0f;
     //學習速率
     _krBPN.learningRate     = 0.8f;
     //收斂誤差值 ( 一般是 10^-3 或 10^-6 )
-    _krBPN.convergenceError = 0.00001f;
+    _krBPN.convergenceError = 0.001f;
+    //限制迭代次數
+    _krBPN.limitGeneration  = 1000;
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
     //每一次的迭代( Every generation-training )
@@ -107,6 +114,16 @@
             NSLog(@"Training done with total times : %i", totalTimes);
             NSLog(@"TrainedInfo : %@", trainedInfo);
             NSLog(@"TrainedNetwork with inputWeights : %@\n\n\n", [_weakKrBPN.trainedNetwork.inputWeights description]);
+            
+            /*
+            //Check the network is correctly trained.
+            NSLog(@"開始驗證");
+            _weakKrBPN.inputs = [NSMutableArray arrayWithObjects:
+                                 //Input Pattern 3
+                                 @[@1, @-3, @-1, @0.4],
+                                 nil];
+            [_weakKrBPN training];
+             */
         }
     }];
     

@@ -31,6 +31,13 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
                      //Input Pattern 3
                      @[@1, @-3, @-1, @0.4],
                      nil];
+    //每一筆輸入向量的期望值( 輸出期望 )
+    _krBPN.outputGoals = @[//Output Goal of Input Pattern 1
+                           @1.0,
+                           //Output Goal of Input Pattern 2
+                           @0.0,
+                           //Output Goal of Input Pattern 3
+                           @1.0];
     /*
      * @ 輸入層、隱藏層、輸出層之間的神經元初始權重
      *
@@ -79,8 +86,6 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
     //_krBPN.countHiddens;
     //輸出層神經元偏權值, Net 6 for output
     _krBPN.outputBias       = 0.1f;
-    //期望值
-    _krBPN.targetValue      = 1.0f;
     //學習速率
     _krBPN.learningRate     = 0.8f;
     //收斂誤差值 ( 一般是 10^-3 或 10^-6 )
@@ -152,7 +157,7 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
 
 ## Version
 
-V1.1
+V1.1.5
 
 ## License
 
