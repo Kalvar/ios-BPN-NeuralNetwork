@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BPN V1.1.5
+//  BPN V1.1.7
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
@@ -9,7 +9,7 @@
 #import "ViewController.h"
 #import "KRBPN.h"
 
-@interface ViewController ()
+@interface ViewController ()<KRBPNDelegate>
 
 @property (nonatomic, strong) KRBPN *_krBPN;
 
@@ -23,7 +23,8 @@
 {
     [super viewDidLoad];
     
-	_krBPN = [KRBPN sharedNetwork];
+	_krBPN          = [KRBPN sharedNetwork];
+    _krBPN.delegate = self;
     
     //各輸入向量陣列值
     _krBPN.inputs = [NSMutableArray arrayWithObjects:
@@ -98,13 +99,15 @@
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
     //每一次的迭代( Every generation-training )
-    [_krBPN setEachGeneration:^(NSInteger times, NSDictionary *trainedInfo){
+    [_krBPN setEachGeneration:^(NSInteger times, NSDictionary *trainedInfo)
+    {
         NSLog(@"Generation times : %i", times);
         //NSLog(@"trainedInfo : %@\n\n\n", trainedInfo);
     }];
     
     //訓練完成時( Training complete )
-    [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes) {
+    [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes)
+    {
         if( success )
         {
             if( !_weakKrBPN.trainedNetwork )
@@ -114,16 +117,16 @@
             NSLog(@"Training done with total times : %i", totalTimes);
             NSLog(@"TrainedInfo : %@", trainedInfo);
             NSLog(@"TrainedNetwork with inputWeights : %@\n\n\n", [_weakKrBPN.trainedNetwork.inputWeights description]);
-            
             /*
-            //Check the network is correctly trained.
-            NSLog(@"開始驗證");
+            //Start in checking the network is correctly trained.
+            NSLog(@"======== Start in Verification ========");
+            [_weakKrBPN setTrainingCompletion:nil];
             _weakKrBPN.inputs = [NSMutableArray arrayWithObjects:
-                                 //Input Pattern 3
-                                 @[@1, @-3, @-1, @0.4],
+                                 @[@0, @-1, @2, @0.1],
                                  nil];
-            [_weakKrBPN training];
-             */
+            
+            [_weakKrBPN useTrainedNetworkToOutput];
+            */
         }
     }];
     
@@ -173,6 +176,17 @@
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+#pragma --mark KRBPNDelegate
+-(void)krBPNDidTrainFinished:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo totalTimes:(NSInteger)totalTimes
+{
+   NSLog(@"Use trained-network to direct output : %@", krBPN.outputResults);
+}
+
+-(void)krBPNEachGeneration:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo times:(NSInteger)times
+{
+    
 }
 
 @end

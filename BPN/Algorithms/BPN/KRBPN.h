@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V1.1.5 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V1.1.7 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
@@ -107,6 +107,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 -(void)pause;
 -(void)continueTraining;
 -(void)reset;
+-(void)useTrainedNetworkToOutput;
 
 #pragma --mark Trained Network Public Methods
 -(void)saveTrainedNetwork;

@@ -1,6 +1,6 @@
 //
 //  KRBPN.m
-//  BPN V1.1.5
+//  BPN V1.1.7
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
@@ -158,6 +158,10 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     if( !self._originalParameters )
     {
         self._originalParameters = [NSMutableDictionary new];
+    }
+    else
+    {
+        [self._originalParameters removeAllObjects];
     }
     NSMutableDictionary *_originals = self._originalParameters;
     [_originals setObject:[self.inputs copy] forKey:_kOriginalInputs];
@@ -699,19 +703,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)training
 {
-    /*
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^
-    {
-        [self pause];
-        [self _resetTrainedParameters];
-        [self _copyParametersToTemporary];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self _startTraining];
-        });
-    });
-     */
-    
-    dispatch_queue_t queue = dispatch_queue_create("trainingNetwork", NULL);
+    //DISPATCH_QUEUE_CONCURRENT
+    dispatch_queue_t queue = dispatch_queue_create("com.krbpn.train-network", NULL);
     dispatch_async(queue, ^(void)
     {
         [self pause];
@@ -781,6 +774,17 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 {
     [self _resetTrainedParameters];
     [self _recoverOriginalParameters];
+}
+
+/*
+ * @ 
+ *   - 單純使用訓練好的網路作輸出，不跑導傳遞的訓練方法
+ */
+-(void)useTrainedNetworkToOutput
+{
+    //將訓練迭代變為 1 次即終止
+    _limitGeneration = 1;
+    [self training];
 }
 
 #pragma --mark Trained Network Public Methods
