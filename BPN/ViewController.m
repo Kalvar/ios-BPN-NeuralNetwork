@@ -1,9 +1,9 @@
 //
 //  ViewController.m
-//  BPN V1.1.7
+//  BPN V1.2
 //
 //  Created by Kalvar on 13/6/28.
-//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
+//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
 //
 
 #import "ViewController.h"
@@ -24,7 +24,7 @@
     [super viewDidLoad];
     
 	_krBPN          = [KRBPN sharedNetwork];
-    _krBPN.delegate = self;
+    //_krBPN.delegate = self;
     
     //各輸入向量陣列值
     _krBPN.inputs = [NSMutableArray arrayWithObjects:
@@ -35,6 +35,7 @@
                      //Input Pattern 3
                      @[@1, @-3, @-1, @0.4],
                      nil];
+    
     //每一筆輸入向量的期望值( 輸出期望 )
     _krBPN.outputGoals = @[//Output Goal of Input Pattern 1
                            @1.0,
@@ -42,6 +43,7 @@
                            @0.0,
                            //Output Goal of Input Pattern 3
                            @1.0];
+    
     /*
      * @ 輸入層、隱藏層、輸出層之間的神經元初始權重
      *
@@ -72,6 +74,7 @@
                             //W44, W45
                             @[@-0.1, @0.3],
                             nil];
+    
     //隱藏層神經元的偏權值
     _krBPN.hiddenBiases  = [NSMutableArray arrayWithObjects:
                             //Net 4
@@ -93,16 +96,17 @@
     //學習速率
     _krBPN.learningRate     = 0.8f;
     //收斂誤差值 ( 一般是 10^-3 或 10^-6 )
-    _krBPN.convergenceError = 0.001f;
+    _krBPN.convergenceError = 0.000001f;
     //限制迭代次數
-    _krBPN.limitGeneration  = 1000;
+    _krBPN.limitGeneration  = 5000;
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
+    
     //每一次的迭代( Every generation-training )
     [_krBPN setEachGeneration:^(NSInteger times, NSDictionary *trainedInfo)
     {
         NSLog(@"Generation times : %i", times);
-        //NSLog(@"trainedInfo : %@\n\n\n", trainedInfo);
+        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedInfoOutputResults]);
     }];
     
     //訓練完成時( Training complete )
@@ -110,34 +114,45 @@
     {
         if( success )
         {
+            /*
             if( !_weakKrBPN.trainedNetwork )
             {
                 [_weakKrBPN saveTrainedNetwork];
             }
+             */
+            
             NSLog(@"Training done with total times : %i", totalTimes);
-            NSLog(@"TrainedInfo : %@", trainedInfo);
-            NSLog(@"TrainedNetwork with inputWeights : %@\n\n\n", [_weakKrBPN.trainedNetwork.inputWeights description]);
+            NSLog(@"TrainedInfo 1 : %@", trainedInfo);
+            
             /*
             //Start in checking the network is correctly trained.
             NSLog(@"======== Start in Verification ========");
-            [_weakKrBPN setTrainingCompletion:nil];
+            [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes)
+            {
+                NSLog(@"Training done with total times : %i", totalTimes);
+                NSLog(@"TrainedInfo 2 : %@", trainedInfo);
+            }];
+            
+            [_weakKrBPN recoverTrainedNetwork];
             _weakKrBPN.inputs = [NSMutableArray arrayWithObjects:
                                  @[@0, @-1, @2, @0.1],
                                  nil];
-            
             [_weakKrBPN useTrainedNetworkToOutput];
-            */
+            //*/
         }
     }];
     
     //Remove your testing trained-network records.
-    [_krBPN removeTrainedNetwork];
+    //[_krBPN removeTrainedNetwork];
     
     //Start the training, and random the weights, biases, if you use this method that you won't need to setup any weights and biases before.
+    //Random means let network to auto setup inputWeights, hiddenBiases, hiddenWeights values.
     //[_krBPN trainingWithRandom];
+    //As above said, then it will be saved the trained network after done.
+    [_krBPN trainingWithRandomAndSave];
     
     //Start the training network, and it won't be saving the trained-network when finished.
-    [_krBPN training];
+    //[_krBPN training];
     
     //Start the training network, and it will auto-saving the trained-network when finished.
     //[_krBPN trainingDoneSave];
@@ -179,14 +194,18 @@
 }
 
 #pragma --mark KRBPNDelegate
+/*
 -(void)krBPNDidTrainFinished:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo totalTimes:(NSInteger)totalTimes
 {
-   NSLog(@"Use trained-network to direct output : %@", krBPN.outputResults);
+    NSLog(@"Use trained-network to direct output : %@", krBPN.outputResults);
 }
 
 -(void)krBPNEachGeneration:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo times:(NSInteger)times
 {
-    
+    NSLog(@"Generation times : %i", times);
 }
+ //*/
+
 
 @end
+

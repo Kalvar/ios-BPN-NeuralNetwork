@@ -1,9 +1,9 @@
 //
 //  KRBPN+NSUserDefaults.h
-//  BPN V1.1.7
+//  BPN V1.2
 //
 //  Created by Kalvar on 2014/5/22.
-//  Copyright (c) 2014年 Kuo-Ming Lin. All rights reserved.
+//  Copyright (c) 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
 //
 
 @class KRBPNTrainedNetwork;

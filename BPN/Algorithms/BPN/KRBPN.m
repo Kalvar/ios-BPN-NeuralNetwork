@@ -1,13 +1,16 @@
 //
 //  KRBPN.m
-//  BPN V1.1.7
+//  BPN V1.2
 //
 //  Created by Kalvar on 13/6/28.
-//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
+//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
 //
 
 #import "KRBPN.h"
 #import "KRBPN+NSUserDefaults.h"
+
+//To limit the _hiddenNetCount
+#define MAX_HIDDEN_NETS_COUNT 20
 
 /*
  * @ 2 種常用的 BPN 模式
@@ -34,6 +37,7 @@ static NSString *_kOriginalLearningRate     = @"_kOriginalLearningRate";
 static NSString *_kOriginalConvergenceError = @"_kOriginalConvergenceError";
 static NSString *_kOriginalFOfAlpha         = @"_kOriginalFOfAlpha";
 static NSString *_kOriginalLimitGenerations = @"_kOriginalLimitGenerations";
+//static NSString *_kOriginalMaxMultiple      = @"_kOriginalMaxMultiple";
 
 static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 
@@ -53,6 +57,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @property (nonatomic, assign) BOOL _isDoneSave;
 //記錄當前訓練到哪一組 Input 數據
 @property (nonatomic, assign) NSInteger _patternIndex;
+//在訓練 goalValue 且其值不在 -1.0f ~ 1.0f 之間時，就使用本值進行相除與回乘原同類型值的動作
+@property (nonatomic, assign) NSInteger _maxMultiple;
 
 @end
 
@@ -94,6 +100,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     
     [self _resetTrainedParameters];
     
+    self._maxMultiple        = 1;
     self._goalValue          = 1.0f;
     self._originalParameters = [NSMutableDictionary new];
 }
@@ -113,10 +120,9 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
      */
 }
 
--(void)_firedCompleteTraining
+-(void)_completedTraining
 {
     self.isTraining  = NO;
-    
     if( self._isDoneSave )
     {
         self._isDoneSave = NO;
@@ -137,7 +143,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     }
 }
 
--(void)_firedEachGeneration
+-(void)_printEachGeneration
 {
     if( self.delegate )
     {
@@ -174,6 +180,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [_originals setObject:[NSNumber numberWithDouble:self.convergenceError] forKey:_kOriginalConvergenceError];
     [_originals setObject:[NSNumber numberWithFloat:self.fOfAlpha] forKey:_kOriginalFOfAlpha];
     [_originals setObject:[NSNumber numberWithInteger:self.limitGeneration] forKey:_kOriginalLimitGenerations];
+    //[_originals setObject:[NSNumber numberWithInteger:self._maxMultiple] forKey:_kOriginalMaxMultiple];
 }
 
 -(void)_recoverOriginalParameters
@@ -201,16 +208,30 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             self.convergenceError = [[_originals objectForKey:_kOriginalConvergenceError] doubleValue];
             self.fOfAlpha         = [[_originals objectForKey:_kOriginalFOfAlpha] floatValue];
             self.limitGeneration  = [[_originals objectForKey:_kOriginalLimitGenerations] integerValue];
+            
+            //self._maxMultiple     = [[_originals objectForKey:_kOriginalMaxMultiple] integerValue];
         }
     }
 }
 
 /*
- * @ 亂數給範圍值
+ * @ 亂數給指定範圍內的值
+ *   - ex : 1.0 ~ -1.0
  */
 -(double)_randomMax:(double)_maxValue min:(double)_minValue
 {
-    return ((double)rand() / RAND_MAX) * (_maxValue - _minValue) + _minValue;
+    /*
+     * @ 2014.12.28 PM 20:15
+     * @ Noted
+     *   - rand() not fits to use here.
+     *   - arc4random() fits here, it's the real random number.
+     */
+    //srand((int)time(NULL));
+    //double _random = ((double)rand() / RAND_MAX) * (_maxValue - _minValue) + _minValue;
+    //RAND_MAX 是 0x7fffffff (2147483647)，而 arc4random() 返回的最大值则是 0x100000000 (4294967296)，故 * 2.0f 待除，或使用自訂義 ARC4RANDOM_MAX      0x100000000
+    double _random = ((double)arc4random() / ( RAND_MAX * 2.0f ) ) * (_maxValue - _minValue) + _minValue;
+    //NSLog(@"_random : %lf", _random);
+    return _random;
 }
 
 /*
@@ -226,7 +247,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     {
         //將缺少的部份用 0.0f 補滿
         NSMutableArray *_goals = [[NSMutableArray alloc] initWithArray:self.outputGoals];
-        for( int i=0; i<_inputCount; i++ )
+        NSInteger _diffCount   = _inputCount - _goalCount;
+        for( int i=0; i<_diffCount; i++ )
         {
             [_goals addObject:@0.0f];
         }
@@ -306,7 +328,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
          */
         //加上同維度的神經元偏權值
         _sumOfNet    += [_partialWeight floatValue];
-        //代入活化函式
+        //代入活化函式 ( 用 1 除之，則預設限定範圍在 ~ 1.0 以下 )
         float _fOfNet = 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) );
         //加入計算好的輸入向量值，輸入向量是多少維度，輸出就多少維度，例如 : x1[1, 2, 3]，則 net(j) 就要為 [4, 5, 6] 同等維度。( 這似乎有誤，尚未搞懂 囧 )
         [_fOfNets addObject:[NSNumber numberWithFloat:_fOfNet]];
@@ -350,6 +372,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             }
             _sumOfNet    += self.outputBias;
             float _fOfNet = 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) );
+            //float _fOfNet = 3 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) );
             [_fOfNets addObject:[NSNumber numberWithFloat:_fOfNet]];
         }
         [_nets addObject:_fOfNets];
@@ -499,6 +522,21 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     return _onePatternTrained;
 }
 
+//公式化訓練用的期望值
+-(void)_formatMaxMultiple
+{
+    //先找出期望值的最大絕對值
+    NSNumber *_max  = [self.outputGoals valueForKeyPath:@"@max.self"];
+    NSNumber *_min  = [self.outputGoals valueForKeyPath:@"@min.self"];
+    double _fabsMax = fabs(_max.doubleValue);
+    double _fabsMin = fabs(_min.doubleValue);
+    double _realMax = MAX(_fabsMax, _fabsMin);
+    if( _realMax > 1.0f )
+    {
+        self._maxMultiple  = 10 * ( (int)log10(_realMax) + 1 );
+    }
+}
+
 -(void)_startTraining
 {
     ++self.trainingGeneration;
@@ -529,7 +567,10 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
          *           輸入 X3[0, 0, 1]，其期望輸出為 3.0
          *      以此類推。
          */
-        self._goalValue     = [[self.outputGoals objectAtIndex:self._patternIndex] doubleValue];
+        //不論正負號都先轉成絕對值，我只要求得除幾位數變成小數點
+        //NSLog(@"%i", (int)log10f(-81355.555)); //-2147483648
+        //NSLog(@"%i", (int)log10f(81355.555)); //4 個 10 倍
+        self._goalValue     = [[self.outputGoals objectAtIndex:self._patternIndex] doubleValue] / self._maxMultiple;
         self._hiddenOutputs = [self _sumHiddenLayerNetWeightsFromInputs:_inputs];
         //NSLog(@"\n\n_goalValue : %lf, _hiddenOutputs : %@\n\n\n", self._goalValue, self._hiddenOutputs);
         //更新權重失敗，代表訓練異常，中止 !
@@ -545,7 +586,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     if( self.limitGeneration > 0 && self.trainingGeneration >= self.limitGeneration )
     {
         //停止訓練
-        [self _firedCompleteTraining];
+        [self _completedTraining];
         return;
     }
     
@@ -553,7 +594,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     BOOL _isGoalError = NO;
     for( NSNumber *_outpurError in self._outputErrors )
     {
-        float _resultError = [_outpurError floatValue];
+        //使用絕對值來做誤差比較
+        float _resultError = fabsf( [_outpurError floatValue] );
         //如果已達收斂誤差，就不再繼續訓練
         if( _resultError <= self.convergenceError )
         {
@@ -565,16 +607,37 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     if( _isGoalError )
     {
         //達到收斂誤差值或出現異常狀況，即停止訓練
-        [self _firedCompleteTraining];
+        [self _completedTraining];
         return;
     }
     else
     {
         //全部數據都訓練完了，才為 1 迭代
-        [self _firedEachGeneration];
+        [self _printEachGeneration];
         //未達收斂誤差，則繼續執行訓練
         [self _startTraining];
     }
+}
+
+-(void)_trainingWithExtraSetupHandler:(void(^)())_extraSetupHandler
+{
+    //DISPATCH_QUEUE_CONCURRENT
+    dispatch_queue_t queue = dispatch_queue_create("com.krbpn.train-network", NULL);
+    dispatch_async(queue, ^(void)
+    {
+        [self pause];
+        [self _resetTrainedParameters];
+        if( _extraSetupHandler )
+        {
+            _extraSetupHandler();
+        }
+        [self _copyParametersToTemporary];
+        dispatch_async(dispatch_get_main_queue(), ^
+        {
+            [self _formatMaxMultiple];
+            [self _startTraining];
+        });
+    });
 }
 
 @end
@@ -610,6 +673,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize _originalParameters;
 @synthesize _isDoneSave;
 @synthesize _patternIndex;
+@synthesize _maxMultiple;
 
 +(instancetype)sharedNetwork
 {
@@ -661,6 +725,12 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         _hiddenNetCount = 1;
     }
     
+    //隱藏層神經元 MAX is 20
+    if( _hiddenNetCount > MAX_HIDDEN_NETS_COUNT )
+    {
+        _hiddenNetCount = MAX_HIDDEN_NETS_COUNT;
+    }
+    
     if( [_inputWeights count] < 1 )
     {
         //計算共有幾條隱藏層的權重線
@@ -696,26 +766,19 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     
     //輸出層神經元的偏權值
     _outputBias = [self _randomMax:_randomMax min:_randomMin];
+    
 }
+
+
 
 /*
  * @ Start Training BPN
+ *   - Delegate 和 Block 的記憶消耗量在遞迴的實驗下，是一樣的。
+ *   - 只單在 dispatch_queue_t 裡跑遞迴，1070 次以後會 Crash，因為 dispatch_queue 的 memory 有限制，改成迭代 1000 次就換下一個 queue 跑 training 就行了。
  */
 -(void)training
 {
-    //DISPATCH_QUEUE_CONCURRENT
-    dispatch_queue_t queue = dispatch_queue_create("com.krbpn.train-network", NULL);
-    dispatch_async(queue, ^(void)
-    {
-        [self pause];
-        [self _resetTrainedParameters];
-        [self _copyParametersToTemporary];
-        dispatch_async(dispatch_get_main_queue(), ^
-        {
-            [self _startTraining];
-        });
-    });
-    
+    [self _trainingWithExtraSetupHandler:nil];
 }
 
 /*
@@ -724,8 +787,10 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)trainingDoneSave
 {
-    self._isDoneSave = YES;
-    [self training];
+    [self _trainingWithExtraSetupHandler:^
+    {
+        self._isDoneSave = YES;
+    }];
 }
 
 /*
@@ -742,10 +807,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  * @ Start Training BPN
  *   - It'll random setup all weights and biases, then it'll auto save the trained-network when it finished.
  */
--(void)trainingWithRandomAndDoneSave
+-(void)trainingWithRandomAndSave
 {
     self._isDoneSave = YES;
-    [self trainingWithRandom];
+    [self randomWeights];
+    [self _trainingWithExtraSetupHandler:^
+    {
+        self._isDoneSave = YES;
+    }];
 }
 
 /*
@@ -764,6 +833,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(void)continueTraining
 {
     _forceStopTraining = NO;
+    //[self _formatMaxMultiple];
     [self _startTraining];
 }
 
@@ -782,15 +852,33 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)useTrainedNetworkToOutput
 {
-    //將訓練迭代變為 1 次即終止
-    _limitGeneration = 1;
-    [self training];
+    NSArray *_trainInputs  = [_inputs firstObject];
+    dispatch_queue_t queue = dispatch_queue_create("com.krbpn.trained-network", NULL);
+    dispatch_async(queue, ^(void){
+        [self pause];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self _formatMaxMultiple];
+            //將訓練迭代變為 1 次即終止
+            //[self recoverTrainedNetwork];
+            _limitGeneration    = 1;
+            _trainingGeneration = _limitGeneration;
+            self._hiddenOutputs = [self _sumHiddenLayerNetWeightsFromInputs:_trainInputs];
+            self.outputResults  = [self _sumOutputLayerNetsValue];
+            if( self.limitGeneration > 0 && self.trainingGeneration >= self.limitGeneration )
+            {
+                [self _completedTraining];
+                return;
+            }
+        });
+    });
+    
 }
 
 #pragma --mark Trained Network Public Methods
 /*
  * @ Save the trained-network of BPN to NSUserDefaults
  *   - 儲存訓練後的 BPN Network 至 NSUserDefaults
+ *   - 同時會保存原訓練的所有 I/O 數據資料
  */
 -(void)saveTrainedNetwork
 {
@@ -800,6 +888,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     _bpnNetwork.hiddenWeights        = _hiddenWeights;
     _bpnNetwork.hiddenBiases         = _hiddenBiases;
     _bpnNetwork.outputBias           = _outputBias;
+    _bpnNetwork.outputResults        = _outputResults;
     _bpnNetwork.outputGoals          = _outputGoals;
     _bpnNetwork.learningRate         = _learningRate;
     _bpnNetwork.convergenceError     = _convergenceError;
@@ -835,6 +924,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             _hiddenWeights      = _recoverNetwork.hiddenWeights;
             _hiddenBiases       = _recoverNetwork.hiddenBiases;
             _outputBias         = _recoverNetwork.outputBias;
+            _outputResults      = _recoverNetwork.outputResults;
             _outputGoals        = _recoverNetwork.outputGoals;
             _learningRate       = _recoverNetwork.learningRate;
             _convergenceError   = _recoverNetwork.convergenceError;
@@ -854,7 +944,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)recoverTrainedNetwork
 {
-    [self recoverTrainedNetwork:_trainedNetwork];
+    //[self recoverTrainedNetwork:_trainedNetwork];
+    [self recoverTrainedNetwork:self.trainedNetwork];
 }
 
 #pragma --mark Blocks
@@ -871,6 +962,25 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 #pragma --mark Getters
 -(NSDictionary *)trainedInfo
 {
+    //代表有不落在 0 ~ 1 之間的值，就回復至原先的數值長度與型態
+    if( self._maxMultiple != 1 )
+    {
+        NSMutableArray *_formatedOutputResults = [NSMutableArray new];
+        for( NSArray *_groupResults in _outputResults )
+        {
+            for( NSNumber *_result in _groupResults )
+            {
+                //還原每一個 goalValue 當初設定的原同等位同寬度的結果值
+                double _recoveredRetuls = [_result doubleValue] * self._maxMultiple;
+                [_formatedOutputResults addObject:[NSNumber numberWithDouble:_recoveredRetuls]];
+            }
+        }
+        self.outputResults     = nil;
+        _outputResults         = [[NSArray alloc] initWithArray:_formatedOutputResults];
+        [_formatedOutputResults removeAllObjects];
+        _formatedOutputResults = nil;
+    }
+    
     return @{KRBPNTrainedInfoInputWeights      : _inputWeights,
              KRBPNTrainedInfoHiddenWeights     : _hiddenWeights,
              KRBPNTrainedInfoHiddenBiases      : _hiddenBiases,

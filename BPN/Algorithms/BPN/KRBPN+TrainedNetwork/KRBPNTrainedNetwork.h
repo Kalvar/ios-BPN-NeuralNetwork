@@ -1,9 +1,9 @@
 //
 //  KRBPNTrainedNetwork.h
-//  BPN V1.1.7
+//  BPN V1.2
 //
 //  Created by Kalvar on 2014/5/22.
-//  Copyright (c) 2014年 Kuo-Ming Lin. All rights reserved.
+//  Copyright (c) 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
 //
 
 @interface KRBPNTrainedNetwork : NSObject <NSCoding>
@@ -13,7 +13,8 @@
 @property (nonatomic, strong) NSMutableArray *hiddenWeights;
 @property (nonatomic, strong) NSMutableArray *hiddenBiases;
 @property (nonatomic, assign) double outputBias;
-@property (nonatomic, assign) NSArray *outputGoals;
+@property (nonatomic, strong) NSArray *outputResults;
+@property (nonatomic, strong) NSArray *outputGoals;
 @property (nonatomic, assign) CGFloat learningRate;
 @property (nonatomic, assign) double convergenceError;
 @property (nonatomic, assign) float fOfAlpha;

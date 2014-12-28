@@ -1,9 +1,9 @@
 //
 //  ViewController.h
-//  BPN V1.1.7
+//  BPN V1.2
 //
 //  Created by Kalvar on 13/6/28.
-//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin. All rights reserved.
+//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

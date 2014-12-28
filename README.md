@@ -20,7 +20,7 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
 {
     [super viewDidLoad];
     
-	_krBPN = [KRBPN sharedNetwork];
+	_krBPN        = [KRBPN sharedNetwork];
     
     //各輸入向量陣列值
     _krBPN.inputs = [NSMutableArray arrayWithObjects:
@@ -31,6 +31,7 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
                      //Input Pattern 3
                      @[@1, @-3, @-1, @0.4],
                      nil];
+    
     //每一筆輸入向量的期望值( 輸出期望 )
     _krBPN.outputGoals = @[//Output Goal of Input Pattern 1
                            @1.0,
@@ -38,6 +39,7 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
                            @0.0,
                            //Output Goal of Input Pattern 3
                            @1.0];
+    
     /*
      * @ 輸入層、隱藏層、輸出層之間的神經元初始權重
      *
@@ -68,6 +70,7 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
                             //W44, W45
                             @[@-0.1, @0.3],
                             nil];
+    
     //隱藏層神經元的偏權值
     _krBPN.hiddenBiases  = [NSMutableArray arrayWithObjects:
                             //Net 4
@@ -89,57 +92,76 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
     //學習速率
     _krBPN.learningRate     = 0.8f;
     //收斂誤差值 ( 一般是 10^-3 或 10^-6 )
-    _krBPN.convergenceError = 0.001f;
+    _krBPN.convergenceError = 0.000001f;
+    //限制迭代次數
+    _krBPN.limitGeneration  = 5000;
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
+    
     //每一次的迭代( Every generation-training )
-    [_krBPN setEachGeneration:^(NSInteger times, NSDictionary *trainedInfo){
+    [_krBPN setEachGeneration:^(NSInteger times, NSDictionary *trainedInfo)
+    {
         NSLog(@"Generation times : %i", times);
-        //NSLog(@"trainedInfo : %@\n\n\n", trainedInfo);
+        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedInfoOutputResults]);
     }];
     
     //訓練完成時( Training complete )
-    [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes) {
+    [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes)
+    {
         if( success )
         {
-            if( !_weakKrBPN.trainedNetwork )
-            {
-                [_weakKrBPN saveTrainedNetwork];
-            }
             NSLog(@"Training done with total times : %i", totalTimes);
-            NSLog(@"TrainedInfo : %@", trainedInfo);
-            NSLog(@"TrainedNetwork with inputWeights : %@\n\n\n", [_weakKrBPN.trainedNetwork.inputWeights description]);
+            NSLog(@"TrainedInfo 1 : %@", trainedInfo);
+            
+            /*
+            //Start in checking the network is correctly trained.
+            NSLog(@"======== Start in Verification ========");
+            [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes)
+            {
+                NSLog(@"Training done with total times : %i", totalTimes);
+                NSLog(@"TrainedInfo 2 : %@", trainedInfo);
+            }];
+            
+            [_weakKrBPN recoverTrainedNetwork];
+            _weakKrBPN.inputs = [NSMutableArray arrayWithObjects:
+                                 @[@0, @-1, @2, @0.1],
+                                 nil];
+            [_weakKrBPN useTrainedNetworkToOutput];
+            //*/
         }
     }];
     
     //Remove your testing trained-network records.
-    [_krBPN removeTrainedNetwork];
+    //[_krBPN removeTrainedNetwork];
     
-    //Start the random weights, biases
-    [_krBPN trainingWithRandom];
-
+    //Start the training, and random the weights, biases, if you use this method that you won't need to setup any weights and biases before.
+    //Random means let network to auto setup inputWeights, hiddenBiases, hiddenWeights values.
+    //[_krBPN trainingWithRandom];
+    //As above said, then it will be saved the trained network after done.
+    [_krBPN trainingWithRandomAndSave];
+    
     //Start the training network, and it won't be saving the trained-network when finished.
-    [_krBPN training];
+    //[_krBPN training];
     
     //Start the training network, and it will auto-saving the trained-network when finished.
-    [_krBPN trainingDoneSave];
+    //[_krBPN trainingDoneSave];
     
     //If you wanna pause the training.
-    [_krBPN pause];
+    //[_krBPN pause];
     
     //If you wanna continue the paused training.
-    [_krBPN continueTraining];
+    //[_krBPN continueTraining];
     
     //If you wanna reset the network back to initial situation.
-    [_krBPN reset];
+    //[_krBPN reset];
     
     //When the training finished, to save the trained-network into NSUserDefaults.
-    [_krBPN saveTrainedNetwork];
+    //[_krBPN saveTrainedNetwork];
     
     //If you wanna recover the trained-network data.
-    [_krBPN recoverTrainedNetwork];
-
+    //[_krBPN recoverTrainedNetwork];
     //Or you wanna use the KRBPNTrainedNetwork object to recover the training data.
+    /*
     KRBPNTrainedNetwork *_trainedNetwork = [[KRBPNTrainedNetwork alloc] init];
     _trainedNetwork.inputs = [NSMutableArray arrayWithObjects:
                               @[@1],
@@ -147,17 +169,17 @@ This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ),
                               @[@1],
                               nil];
     [_krBPN recoverTrainedNetwork:_trainedNetwork];
-
+    */
+    
     //To remove the saved trained-network.
-    [_krBPN removeTrainedNetwork];
-
+    //[_krBPN removeTrainedNetwork];
 }
 @end
 ```
 
 ## Version
 
-V1.1.5
+V1.2
 
 ## License
 

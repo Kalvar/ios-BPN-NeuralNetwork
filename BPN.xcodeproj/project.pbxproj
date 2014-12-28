@@ -184,6 +184,15 @@
 			attributes = {
 				LastUpgradeCheck = 0460;
 				ORGANIZATIONNAME = "Kuo-Ming Lin";
+				TargetAttributes = {
+					8E720433177DB7AA00B5DDC2 = {
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 0;
+							};
+						};
+					};
+				};
 			};
 			buildConfigurationList = 8E72042F177DB7AA00B5DDC2 /* Build configuration list for PBXProject "BPN" */;
 			compatibilityVersion = "Xcode 3.2";
