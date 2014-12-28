@@ -3,6 +3,8 @@ ios-BPN-Algorithm
 
 This algorithm used EBP is one kind of Back Propagation Neural Networks ( BPN ), and also it is one of neural-network algorithms.
 
+If you need help to know how to use this network, just ask me via email. 
+
 ``` objective-c
 #import "KRBPN.h"
 
