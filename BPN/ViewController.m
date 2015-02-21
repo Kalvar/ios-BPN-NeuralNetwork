@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BPN V1.2
+//  BPN V1.4
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
@@ -26,23 +26,13 @@
 	_krBPN          = [KRBPN sharedNetwork];
     //_krBPN.delegate = self;
     
-    //各輸入向量陣列值
-    _krBPN.inputs = [NSMutableArray arrayWithObjects:
-                     //Input Pattern 1
-                     @[@1, @2, @0.5, @1.2],
-                     //Input Pattern 2
-                     @[@0, @1, @0.3, @-0.9],
-                     //Input Pattern 3
-                     @[@1, @-3, @-1, @0.4],
-                     nil];
-    
-    //每一筆輸入向量的期望值( 輸出期望 )
-    _krBPN.outputGoals = @[//Output Goal of Input Pattern 1
-                           @1.0,
-                           //Output Goal of Input Pattern 2
-                           @0.0,
-                           //Output Goal of Input Pattern 3
-                           @1.0];
+    //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )
+    //Pattern 1
+    [_krBPN addPatterns:@[@1, @2, @0.5, @1.2] outputGoal:1.0f];
+    //Pattern 2
+    [_krBPN addPatterns:@[@0, @1, @0.3, @-0.9] outputGoal:0.0f];
+    //Pattern 2
+    [_krBPN addPatterns:@[@1, @-3, @-1, @0.4] outputGoal:1.0f];
     
     /*
      * @ 輸入層、隱藏層、輸出層之間的神經元初始權重
@@ -64,31 +54,21 @@
      *
      */
     //輸入層各向量值到隱藏層神經元的權重 ( 連結同一個 Net 的就一組一組分開，有幾個 Hidden Net 就會有幾組 )
-    _krBPN.inputWeights  = [NSMutableArray arrayWithObjects:
-                            //W14, W15
-                            @[@0.2, @-0.3],
-                            //W24, W25
-                            @[@0.4, @0.1],
-                            //W34, W35
-                            @[@-0.5, @0.2],
-                            //W44, W45
-                            @[@-0.1, @0.3],
-                            nil];
+    //W15, W16
+    [_krBPN addPatternWeights:@[@0.2, @-0.3]];
+    //W25, W26
+    [_krBPN addPatternWeights:@[@0.4, @0.1]];
+    //W35, W36
+    [_krBPN addPatternWeights:@[@-0.5, @0.2]];
+    //W45, W46
+    [_krBPN addPatternWeights:@[@-0.1, @0.3]];
     
-    //隱藏層神經元的偏權值
-    _krBPN.hiddenBiases  = [NSMutableArray arrayWithObjects:
-                            //Net 4
-                            @-0.4,
-                            //Net 5
-                            @0.2,
-                            nil];
-    //隱藏層神經元到輸出層神經元的權重值
-    _krBPN.hiddenWeights = [NSMutableArray arrayWithObjects:
-                            //W46
-                            @-0.3,
-                            //W56
-                            @-0.2,
-                            nil];
+    //隱藏層神經元的偏權值 & 隱藏層神經元到輸出層神經元的權重值
+    //Net 5, W57
+    [_krBPN addHiddenLayerNetBias:-0.4f netWeight:-0.3f];
+    //Net 6, W67
+    [_krBPN addHiddenLayerNetBias:0.2f netWeight:-0.2f];
+    
     //有幾顆隱藏層的神經元 ( 不用外部設定，由偏權值數目自動設定 )
     //_krBPN.countHiddens;
     //輸出層神經元偏權值, Net 6 for output
@@ -124,7 +104,7 @@
             NSLog(@"Training done with total times : %i", totalTimes);
             NSLog(@"TrainedInfo 1 : %@", trainedInfo);
             
-            /*
+            ///*
             //Start in checking the network is correctly trained.
             NSLog(@"======== Start in Verification ========");
             [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes)
@@ -149,10 +129,10 @@
     //Random means let network to auto setup inputWeights, hiddenBiases, hiddenWeights values.
     //[_krBPN trainingWithRandom];
     //As above said, then it will be saved the trained network after done.
-    [_krBPN trainingWithRandomAndSave];
+    //[_krBPN trainingWithRandomAndSave];
     
     //Start the training network, and it won't be saving the trained-network when finished.
-    //[_krBPN training];
+    [_krBPN training];
     
     //Start the training network, and it will auto-saving the trained-network when finished.
     //[_krBPN trainingDoneSave];

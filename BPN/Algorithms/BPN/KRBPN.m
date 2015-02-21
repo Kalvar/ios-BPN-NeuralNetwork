@@ -1,6 +1,6 @@
 //
 //  KRBPN.m
-//  BPN V1.2
+//  BPN V1.4
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
@@ -87,7 +87,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     self.hiddenBiases        = [[NSMutableArray alloc] initWithCapacity:0];
     self.countHiddenNets     = 0;
     self.outputBias          = 0.1f;
-    self.outputGoals         = nil;
+    self.outputGoals         = [NSMutableArray new];
     self.learningRate        = 0.8f;
     self.convergenceError    = 0.001f;
     self.fOfAlpha            = 1;
@@ -203,7 +203,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             [self.hiddenBiases addObjectsFromArray:[_originals objectForKey:_kOriginalHiddenBiases]];
             
             self.outputBias       = [[_originals objectForKey:_kOriginalOutputBias] doubleValue];
-            self.outputGoals      = [NSArray arrayWithArray:[_originals objectForKey:_kOriginalOutputGoals]];
+            self.outputGoals      = [NSMutableArray arrayWithArray:[_originals objectForKey:_kOriginalOutputGoals]];
             self.learningRate     = [[_originals objectForKey:_kOriginalLearningRate] floatValue];
             self.convergenceError = [[_originals objectForKey:_kOriginalConvergenceError] doubleValue];
             self.fOfAlpha         = [[_originals objectForKey:_kOriginalFOfAlpha] floatValue];
@@ -252,7 +252,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         {
             [_goals addObject:@0.0f];
         }
-        self.outputGoals = [[NSArray alloc] initWithArray:_goals];
+        self.outputGoals = [[NSMutableArray alloc] initWithArray:_goals];
         [_goals removeAllObjects];
         _goals = nil;
     }
@@ -696,6 +696,38 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     return self;
 }
 
+#pragma --mark Settings Public Methods
+/*
+ * @ 各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )
+ */
+-(void)addPatterns:(NSArray *)_patterns outputGoal:(float)_goal
+{
+    [_inputs addObject:_patterns];
+    [_outputGoals addObject:[NSNumber numberWithFloat:_goal]];
+}
+
+/*
+ * @ 輸入層各向量值到隱藏層神經元的權重
+ *   - 連結同一個 Net 的就一組一組分開，有幾個 Hidden Net 就會有幾組
+ */
+-(void)addPatternWeights:(NSArray *)_weights
+{
+    //@[ @[W14, W15], @[W24, W25], @[W34, W35] ]
+    //@[ @[@0.2, @-0.3], @[@0.4, @0.1], @[@-0.5, @0.2] ]
+    [_inputWeights addObject:_weights];
+}
+
+/*
+ * @ 增加隱藏層的各項參數設定
+ *   - _netBias 隱藏層神經元 Net # 的偏權值
+ *   - _netWeights 隱藏層神經元 Net # 到下一層神經元的權重值
+ */
+-(void)addHiddenLayerNetBias:(float)_netBias netWeight:(float)_netWeight
+{
+    [_hiddenBiases addObject:[NSNumber numberWithFloat:_netBias]];
+    [_hiddenWeights addObject:[NSNumber numberWithFloat:_netWeight]];
+}
+
 #pragma --mark Training Public Methods
 /*
  * @ Random all hidden-net weights, net biases, output net bias.
@@ -712,13 +744,13 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [_hiddenBiases removeAllObjects];
     [_hiddenWeights removeAllObjects];
     //亂數給權重值、偏權值
-    CGFloat _randomMax       = 1.0f;
-    CGFloat _randomMin       = -1.0f;
+    CGFloat _randomMax        = 1.0f;
+    CGFloat _randomMin        = -1.0f;
     //單組輸入向量有多長，就有多少顆輸入層神經元
-    NSInteger _inputNetCount = [[_inputs firstObject] count];
-    //神經元顆數乘平方即為輸入層到隱藏層的輸入權重總數
-    //後續也能考慮當神經元數目過多時，直接除以 2 以減低訓練時間和負擔
-    NSInteger _hiddenNetCount = _inputNetCount;
+    NSInteger _inputNetCount  = [[_inputs firstObject] count];
+    NSInteger _outputNetCount = 1;
+    //輸入層到隱藏層的輸入層 Net 數量 = ( (輸入層的 Net 數 * 輸出層 Net 數) ^ 1/2  )
+    NSInteger _hiddenNetCount = (int)powf(( _inputNetCount * _outputNetCount ), 0.5f); //_inputNetCount;
     if( _hiddenNetCount < 1 )
     {
         //最少 1 顆
@@ -768,8 +800,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     _outputBias = [self _randomMax:_randomMax min:_randomMin];
     
 }
-
-
 
 /*
  * @ Start Training BPN

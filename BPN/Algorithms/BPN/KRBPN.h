@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V1.2 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V1.4 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
@@ -61,7 +61,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 @property (nonatomic, strong) id<KRBPNDelegate> delegate;
 //輸入層各向量值之陣列集合
 @property (nonatomic, strong) NSMutableArray *inputs;
-//輸入層各向量值到隱藏層神經元的權重
+//輸入層各向量值到第 1 層隱藏層神經元的權重
 @property (nonatomic, strong) NSMutableArray *inputWeights;
 //隱藏層神經元到輸出層神經元的權重值
 @property (nonatomic, strong) NSMutableArray *hiddenWeights;
@@ -74,7 +74,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 //輸出層的輸出值( 輸出結果 )
 @property (nonatomic, strong) NSArray *outputResults;
 //所有輸入向量( 每一組訓練資料 )的各別輸出期望值
-@property (nonatomic, strong) NSArray *outputGoals;
+@property (nonatomic, strong) NSMutableArray *outputGoals;
 //學習速率
 @property (nonatomic, assign) CGFloat learningRate;
 //收斂誤差值 ( 10^-3, 10^-6 )
@@ -97,6 +97,11 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 
 +(instancetype)sharedNetwork;
 -(instancetype)init;
+
+#pragma --mark Settings Public Methods
+-(void)addPatterns:(NSArray *)_patterns outputGoal:(float)_goal;
+-(void)addPatternWeights:(NSArray *)_weights;
+-(void)addHiddenLayerNetBias:(float)_netBias netWeight:(float)_netWeight;
 
 #pragma --mark Training Public Methods
 -(void)randomWeights;
