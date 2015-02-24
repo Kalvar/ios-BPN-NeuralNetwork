@@ -22,8 +22,6 @@ If you need help to know how to use this network, just ask me via email.
 
 - (void)viewDidLoad
 {
-- (void)viewDidLoad
-{
     [super viewDidLoad];
     
     _krBPN          = [KRBPN sharedNetwork];
