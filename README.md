@@ -29,11 +29,11 @@ If you need help to know how to use this network, just ask me via email.
     
     //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )
     //Pattern 1
-    [_krBPN addPatterns:@[@1, @2, @0.5, @1.2] outputGoal:1.0f];
+    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoal:0.8f];
     //Pattern 2
-    [_krBPN addPatterns:@[@0, @1, @0.3, @-0.9] outputGoal:0.0f];
+    [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoal:0.1f];
     //Pattern 2
-    [_krBPN addPatterns:@[@1, @-3, @-1, @0.4] outputGoal:1.0f];
+    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoal:1.0f];
     
     /*
      * @ 輸入層、隱藏層、輸出層之間的神經元初始權重
@@ -108,7 +108,7 @@ If you need help to know how to use this network, just ask me via email.
             
             [_weakKrBPN recoverTrainedNetwork];
             _weakKrBPN.inputs = [NSMutableArray arrayWithObjects:
-                                 @[@0, @-1, @2, @0.1],
+                                 @[@0.8, @0.2, @0.2, @0.5],
                                  nil];
             [_weakKrBPN useTrainedNetworkToOutput];
         }

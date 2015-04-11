@@ -1,9 +1,9 @@
 //
 //  ViewController.m
-//  BPN V1.4
+//  BPN V1.5
 //
 //  Created by Kalvar on 13/6/28.
-//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
+//  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
 
 #import "ViewController.h"
@@ -26,13 +26,13 @@
 	_krBPN          = [KRBPN sharedNetwork];
     //_krBPN.delegate = self;
     
-    //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )
+    //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，Input 值域為 [0, 1]，輸出目標為 {0, 1}
     //Pattern 1
-    [_krBPN addPatterns:@[@1, @2, @0.5, @1.2] outputGoal:1.0f];
+    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoal:0.8f];
     //Pattern 2
-    [_krBPN addPatterns:@[@0, @1, @0.3, @-0.9] outputGoal:0.0f];
+    [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoal:0.1f];
     //Pattern 2
-    [_krBPN addPatterns:@[@1, @-3, @-1, @0.4] outputGoal:1.0f];
+    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoal:1.0f];
     
     /*
      * @ 輸入層、隱藏層、輸出層之間的神經元初始權重
@@ -113,29 +113,29 @@
                 NSLog(@"TrainedInfo 2 : %@", trainedInfo);
             }];
             
-            [_weakKrBPN recoverTrainedNetwork];
+            [_weakKrBPN recoverNetwork];
             _weakKrBPN.inputs = [NSMutableArray arrayWithObjects:
-                                 @[@0, @-1, @2, @0.1],
+                                 @[@0.8, @0.2, @0.2, @0.5],
                                  nil];
-            [_weakKrBPN useTrainedNetworkToOutput];
+            [_weakKrBPN directOutput];
             //*/
         }
     }];
     
     //Remove your testing trained-network records.
-    //[_krBPN removeTrainedNetwork];
+    //[_krBPN removeNetwork];
     
     //Start the training, and random the weights, biases, if you use this method that you won't need to setup any weights and biases before.
     //Random means let network to auto setup inputWeights, hiddenBiases, hiddenWeights values.
-    //[_krBPN trainingWithRandom];
+    //[_krBPN trainingRandom];
     //As above said, then it will be saved the trained network after done.
-    //[_krBPN trainingWithRandomAndSave];
+    //[_krBPN trainingRandomAndSave];
     
     //Start the training network, and it won't be saving the trained-network when finished.
     [_krBPN training];
     
     //Start the training network, and it will auto-saving the trained-network when finished.
-    //[_krBPN trainingDoneSave];
+    //[_krBPN trainingSave];
     
     //If you wanna pause the training.
     //[_krBPN pause];
@@ -147,10 +147,10 @@
     //[_krBPN reset];
     
     //When the training finished, to save the trained-network into NSUserDefaults.
-    //[_krBPN saveTrainedNetwork];
+    //[_krBPN saveNetwork];
     
     //If you wanna recover the trained-network data.
-    //[_krBPN recoverTrainedNetwork];
+    //[_krBPN recoverNetwork];
     //Or you wanna use the KRBPNTrainedNetwork object to recover the training data.
     /*
     KRBPNTrainedNetwork *_trainedNetwork = [[KRBPNTrainedNetwork alloc] init];
@@ -159,11 +159,11 @@
                               @[@0],
                               @[@1],
                               nil];
-    [_krBPN recoverTrainedNetwork:_trainedNetwork];
+    [_krBPN recoverNetwork:_trainedNetwork];
     */
     
     //To remove the saved trained-network.
-    //[_krBPN removeTrainedNetwork];
+    //[_krBPN removeNetwork];
 }
 
 - (void)didReceiveMemoryWarning

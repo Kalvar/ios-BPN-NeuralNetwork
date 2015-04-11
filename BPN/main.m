@@ -1,9 +1,9 @@
 //
 //  main.m
-//  BPN V1.4
+//  BPN V1.5
 //
 //  Created by Kalvar on 13/6/28.
-//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
+//  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

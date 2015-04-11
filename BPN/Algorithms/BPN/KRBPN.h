@@ -1,9 +1,9 @@
 //
 //  KRBPN.h
-//  BPN V1.4 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V1.5 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
-//  Copyright (c) 2013 - 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
+//  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
 /*
  * @ 3 層架構
@@ -22,6 +22,7 @@
  * @ 訓練完成時
  *   - success     : 是否訓練成功
  *   - trainedInfo : 訓練後的 Network 資料
+ *   - totalTimes  : 共訓練幾次即達到收斂
  */
 typedef void(^KRBPNTrainingCompletion)(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes);
 
@@ -102,23 +103,23 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 -(void)addPatterns:(NSArray *)_patterns outputGoal:(float)_goal;
 -(void)addPatternWeights:(NSArray *)_weights;
 -(void)addHiddenLayerNetBias:(float)_netBias netWeight:(float)_netWeight;
+-(void)randomWeights;
 
 #pragma --mark Training Public Methods
--(void)randomWeights;
 -(void)training;
--(void)trainingDoneSave;
--(void)trainingWithRandom;
--(void)trainingWithRandomAndSave;
+-(void)trainingSave;
+-(void)trainingRandom;
+-(void)trainingRandomAndSave;
 -(void)pause;
 -(void)continueTraining;
 -(void)reset;
--(void)useTrainedNetworkToOutput;
+-(void)directOutput;
 
 #pragma --mark Trained Network Public Methods
--(void)saveTrainedNetwork;
--(void)removeTrainedNetwork;
--(void)recoverTrainedNetwork:(KRBPNTrainedNetwork *)_recoverNetworks;
--(void)recoverTrainedNetwork;
+-(void)saveNetwork;
+-(void)removeNetwork;
+-(void)recoverNetwork:(KRBPNTrainedNetwork *)_recoverNetworks;
+-(void)recoverNetwork;
 
 #pragma --mark Blocks
 -(void)setTrainingCompletion:(KRBPNTrainingCompletion)_theBlock;
@@ -129,7 +130,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 @protocol KRBPNDelegate <NSObject>
 
 @optional
--(void)krBPNDidTrainFinished:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo totalTimes:(NSInteger)totalTimes;
--(void)krBPNEachGeneration:(KRBPN*)krBPN trainedInfo:(NSDictionary *)trainedInfo times:(NSInteger)times;
+-(void)krBpnDidTrainFinished:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo totalTimes:(NSInteger)totalTimes;
+-(void)krBpnEachGeneration:(KRBPN*)krBPN trainedInfo:(NSDictionary *)trainedInfo times:(NSInteger)times;
 
 @end
