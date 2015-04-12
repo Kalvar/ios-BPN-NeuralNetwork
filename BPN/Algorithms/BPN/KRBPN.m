@@ -486,7 +486,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
                 NSArray *_outputs   = [self._hiddenOutputs objectAtIndex:_hiddenIndex];
                 float _resetWeight  = [_netWeight floatValue] + ( self.learningRate * _errorValue * [[_outputs firstObject] floatValue] );
                 //原公式在精度上較差，故暫不採用 : learning rate * last error value * last output value
-                //float _resetWeight  = ( self.learningRate * _errorValue * [[_outputs firstObject] floatValue] );
+                //float _resetWeight  = self.learningRate * _errorValue * [[_outputs firstObject] floatValue];
                 //修正隱藏層到輸出層的權重
                 [self.hiddenWeights replaceObjectAtIndex:_hiddenIndex withObject:[NSNumber numberWithFloat:_resetWeight]];
             }
@@ -498,9 +498,11 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         for( NSNumber *_netError in _hiddenErrors )
         {
             ++_netIndex;
-            float _netBias     = [[self.hiddenBiases objectAtIndex:_netIndex] floatValue];
-            float _resetWeight = _netBias + ( self.learningRate * [_netError floatValue] );
-            //float _resetWeight = ( self.learningRate * [_netError floatValue] ); //原公式在精度上較差，故暫不採用
+            //原使用公式，精度稍高，但迭代數大增
+            //float _netBias     = [[self.hiddenBiases objectAtIndex:_netIndex] floatValue];
+            //float _resetWeight = _netBias + ( self.learningRate * [_netError floatValue] );
+            //原公式，能幫助提前收斂，精度可
+            float _resetWeight = -self.learningRate * [_netError floatValue];
             //修正隱藏層偏權值
             [self.hiddenBiases replaceObjectAtIndex:_netIndex withObject:[NSNumber numberWithFloat:_resetWeight]];
         }

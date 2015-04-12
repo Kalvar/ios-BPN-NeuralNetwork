@@ -26,7 +26,7 @@
 	_krBPN          = [KRBPN sharedNetwork];
     //_krBPN.delegate = self;
     
-    //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，Input 值域為 [0, 1]，輸出目標為 {0, 1}
+    //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，因使用雙 S 曲線轉換函數，故 Input 值域須為 [0, 1]，輸出目標為 [0, 1]
     //Pattern 1
     [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoal:0.8f];
     //Pattern 2
@@ -72,11 +72,11 @@
     //有幾顆隱藏層的神經元 ( 不用外部設定，由偏權值數目自動設定 )
     //_krBPN.countHiddens;
     //輸出層神經元偏權值, Net 6 for output
-    _krBPN.outputBias       = 0.1f;
+    _krBPN.outputBias       = 0.0f;
     //學習速率
     _krBPN.learningRate     = 0.8f;
     //收斂誤差值 ( 一般是 10^-3 或 10^-6 )
-    _krBPN.convergenceError = 0.000001f;
+    _krBPN.convergenceError = 0.001f;
     //限制迭代次數
     _krBPN.limitGeneration  = 5000;
     
