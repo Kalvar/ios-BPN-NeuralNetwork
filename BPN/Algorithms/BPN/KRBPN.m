@@ -1,6 +1,6 @@
 //
 //  KRBPN.m
-//  BPN V1.5
+//  BPN V1.9
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -8,9 +8,6 @@
 
 #import "KRBPN.h"
 #import "KRBPN+NSUserDefaults.h"
-
-//To limit the _hiddenNetCount
-#define MAX_HIDDEN_NETS_COUNT 20
 
 /*
  * @ 2 種常用的 BPN 模式
@@ -37,7 +34,7 @@ static NSString *_kOriginalInputs           = @"_kOriginalInputs";
 static NSString *_kOriginalInputWeights     = @"_kOriginalInputWeights";
 static NSString *_kOriginalHiddenWeights    = @"_kOriginalHiddenWeights";
 static NSString *_kOriginalHiddenBiases     = @"_kOriginalHiddenBiases";
-static NSString *_kOriginalOutputBias       = @"_kOriginalOutputBias";
+static NSString *_kOriginalOutputBiases     = @"_kOriginalOutputBiases";
 static NSString *_kOriginalOutputResults    = @"_kOriginalOutputResults";
 static NSString *_kOriginalOutputGoals      = @"_kOriginalOutputGoals";
 static NSString *_kOriginalLearningRate     = @"_kOriginalLearningRate";
@@ -53,11 +50,11 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 //隱藏層的輸出值
 @property (nonatomic, strong) NSArray *_hiddenOutputs;
 //當前資料的輸出期望值
-@property (nonatomic, assign) double _goalValue;
+@property (nonatomic, assign) NSArray *_goalValues;
 //輸出層的誤差值
 @property (nonatomic, strong) NSArray *_outputErrors;
 //是否強制中止訓練
-@property (nonatomic, assign) BOOL _forceStopTraining;
+@property (nonatomic, assign) BOOL _forceStop;
 //原來的設定值
 @property (nonatomic, strong) NSMutableDictionary *_originalParameters;
 //訓練完就儲存至 NSUserDefaults 裡
@@ -66,6 +63,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @property (nonatomic, assign) NSInteger _patternIndex;
 //在訓練 goalValue 且其值不在 0.0f ~ 1.0f 之間時，就使用本值進行相除與回乘原同類型值的動作
 @property (nonatomic, assign) NSInteger _maxMultiple;
+//儲存要用於比較計算 _maxMultiple 值的所有 Target Outputs
+@property (nonatomic, strong) NSMutableArray *_compareTargets;
 
 @end
 
@@ -80,7 +79,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     
     self._hiddenOutputs      = nil;
     self._outputErrors       = nil;
-    self._forceStopTraining  = NO;
+    self._forceStop          = NO;
     self._isDoneSave         = NO;
     self._patternIndex       = 0;
 }
@@ -93,7 +92,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     self.hiddenWeights       = [[NSMutableArray alloc] initWithCapacity:0];
     self.hiddenBiases        = [[NSMutableArray alloc] initWithCapacity:0];
     self.countHiddenNets     = 0;
-    self.outputBias          = 0.1f;
+    self.outputBiases        = [NSMutableArray new];
     self.outputGoals         = [NSMutableArray new];
     self.learningRate        = 0.8f;
     self.convergenceError    = 0.001f;
@@ -108,8 +107,9 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [self _resetTrainedParameters];
     
     self._maxMultiple        = 1;
-    self._goalValue          = 1.0f;
+    self._goalValues         = nil;
     self._originalParameters = [NSMutableDictionary new];
+    self._compareTargets     = [NSMutableArray new];
 }
 
 @end
@@ -181,7 +181,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [_originals setObject:[self.inputWeights copy] forKey:_kOriginalInputWeights];
     [_originals setObject:[self.hiddenWeights copy] forKey:_kOriginalHiddenWeights];
     [_originals setObject:[self.hiddenBiases copy] forKey:_kOriginalHiddenBiases];
-    [_originals setObject:[NSNumber numberWithDouble:self.outputBias] forKey:_kOriginalOutputBias];
+    [_originals setObject:[self.outputBiases copy] forKey:_kOriginalOutputBiases];
     [_originals setObject:[self.outputGoals copy] forKey:_kOriginalOutputGoals];
     [_originals setObject:[NSNumber numberWithFloat:self.learningRate] forKey:_kOriginalLearningRate];
     [_originals setObject:[NSNumber numberWithDouble:self.convergenceError] forKey:_kOriginalConvergenceError];
@@ -209,8 +209,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             [self.hiddenBiases removeAllObjects];
             [self.hiddenBiases addObjectsFromArray:[_originals objectForKey:_kOriginalHiddenBiases]];
             
-            self.outputBias       = [[_originals objectForKey:_kOriginalOutputBias] doubleValue];
-            self.outputGoals      = [NSMutableArray arrayWithArray:[_originals objectForKey:_kOriginalOutputGoals]];
+            self.outputBiases     = (NSMutableArray *)[_originals objectForKey:_kOriginalOutputBiases];
+            self.outputGoals      = (NSMutableArray *)[_originals objectForKey:_kOriginalOutputGoals];
             self.learningRate     = [[_originals objectForKey:_kOriginalLearningRate] floatValue];
             self.convergenceError = [[_originals objectForKey:_kOriginalConvergenceError] doubleValue];
             self.fOfAlpha         = [[_originals objectForKey:_kOriginalFOfAlpha] floatValue];
@@ -241,30 +241,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     return _random;
 }
 
-/*
- * @ 先針對 Output Goals 輸出期望值集合做資料正規化
- *   - 以免因為少設定映射的期望結果而 Crash
- */
--(void)_formatOutputGoals
-{
-    NSInteger _goalCount  = [self.outputGoals count];
-    NSInteger _inputCount = [self.inputs count];
-    //輸出期望值組數 < 輸入向量的 Pattern 組數
-    if( _goalCount < _inputCount )
-    {
-        //將缺少的部份用 0.0f 補滿
-        NSMutableArray *_goals = [[NSMutableArray alloc] initWithArray:self.outputGoals];
-        NSInteger _diffCount   = _inputCount - _goalCount;
-        for( int i=0; i<_diffCount; i++ )
-        {
-            [_goals addObject:@0.0f];
-        }
-        self.outputGoals = [[NSMutableArray alloc] initWithArray:_goals];
-        [_goals removeAllObjects];
-        _goals = nil;
-    }
-}
-
 @end
 
 @implementation KRBPN (fixTrainings)
@@ -279,17 +255,15 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(NSArray *)_sumHiddenLayerNetWeightsFromInputs:(NSArray *)_inputs
 {
-    //運算完成的 Nets
-    NSMutableArray *_nets  = [NSMutableArray new];
+    //運算完成的 Nets = net(j)
+    NSMutableArray *_fOfNets = [NSMutableArray new];
     //輸入層要做 SUM 就必須取出同一維度的值做運算
     //定義權重的維度
-    int _weightDimesion    = -1;
+    int _weightDimesion      = -1;
     //依照隱藏層有幾顆神經元(偏權值)，就跑幾次的維度運算
     for( NSNumber *_partialWeight in self.hiddenBiases )
     {
         ++_weightDimesion;
-        //net(j)
-        NSMutableArray *_fOfNets = [NSMutableArray new];
         //再以同維度做 SUM 方法
         float _sumOfNet = 0;
         /*
@@ -333,15 +307,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
          *
          *   - 要明白 SUM 的本意，是指「加總融合」所有輸入向量陣列裡的值 ( 做線性代數的一維矩陣相乘 )
          */
-        //加上同維度的神經元偏權值
+        //減同維度的神經元偏權值
         _sumOfNet    -= [_partialWeight floatValue];
         //代入活化函式 ( 用 1 除之，則預設限定範圍在 ~ 1.0 以下 ) 1 / 1 + e^(-alpha * sumOfNet)
         float _fOfNet = 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) );
-        //加入計算好的輸入向量值，輸入向量是多少維度，輸出就多少維度，例如 : x1[1, 2, 3]，則 net(j) 就要為 [4, 5, 6] 同等維度。( 這似乎有誤，尚未搞懂 囧 )
+        //加入計算好的輸入向量值，輸入向量是多少維度，輸出就多少維度，例如 : x1[1, 2, 3]，則 net(j) 就要為 [4, 5, 6] 同等維度
         [_fOfNets addObject:[NSNumber numberWithFloat:_fOfNet]];
-        [_nets addObject:_fOfNets];
     }
-    return ( [_nets count] > 0 ) ? (NSArray *)_nets : nil ;
+    return ( [_fOfNets count] > 0 ) ? _fOfNets : nil;
 }
 
 /*
@@ -350,42 +323,29 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(NSArray *)_sumOutputLayerNetsValue
 {
-    NSMutableArray *_nets = [NSMutableArray new];
-    NSArray *_hiddenNets  = self._hiddenOutputs;
-    if( _hiddenNets )
+    NSMutableArray *_fOfNets = nil;
+    NSArray *_hideOutputs    = self._hiddenOutputs;
+    if( _hideOutputs )
     {
-        /*
-         * @ 隱藏層神經元到輸出層神經元的權重值
-         *   
-         *   hiddenNetWeights = @[//W46
-         *                        @-0.3,
-         *                        //W56
-         *                        @-0.2];
-         */
-        NSInteger _inputLength   = [[_hiddenNets firstObject] count];
-        NSMutableArray *_fOfNets = [NSMutableArray new];
-        for( int i=0; i<_inputLength; i++ )
+        _fOfNets             = [NSMutableArray new];
+        int _outputIndex     = -1;
+        for( NSNumber *_outputBias in self.outputBiases )
         {
             float _sumOfNet = 0;
-            int _sameIndex  = -1;
-            for( NSNumber *_everyWeights in self.hiddenWeights )
+            ++_outputIndex;
+            int _netIndex   = -1;
+            for( NSArray *_weights in self.hiddenWeights )
             {
-                ++_sameIndex;
-                NSArray *_sameInputs = [_hiddenNets objectAtIndex:_sameIndex];
-                float _xValue = [[_sameInputs objectAtIndex:i] floatValue];
-                float _weight = [_everyWeights floatValue];
-                _sumOfNet += _xValue * _weight;
-                //NSLog(@"xValue : %f, _weight : %f\n\n\n", _xValue, _weight);
+                ++_netIndex;
+                NSNumber *_outputWeight  = [_weights objectAtIndex:_outputIndex];
+                _sumOfNet               += [[_hideOutputs objectAtIndex:_netIndex] floatValue] * [_outputWeight floatValue];
             }
-            _sumOfNet    += self.outputBias;
-            float _fOfNet = 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) );
-            //float _fOfNet = 3 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) );
-            [_fOfNets addObject:[NSNumber numberWithFloat:_fOfNet]];
+            _sumOfNet        += [_outputBias floatValue];
+            float _netOutput  = 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) ); //fOfNet
+            [_fOfNets addObject:[NSNumber numberWithFloat:_netOutput]];
         }
-        [_nets addObject:_fOfNets];
-        return _nets;
     }
-    return nil;
+    return _fOfNets;
 }
 
 /*
@@ -394,29 +354,25 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(NSArray *)_calculateOutputError
 {
-    self.outputResults = [self _sumOutputLayerNetsValue];
-    NSArray *_nets     = self.outputResults;
-    //NSLog(@"output net values : %@", _nets);
-    if( _nets )
+    NSMutableArray *_errors = nil;
+    self.outputResults      = [self _sumOutputLayerNetsValue];
+    NSArray *_netOutputs    = self.outputResults;
+    if( _netOutputs )
     {
-        NSMutableArray *_errors = [NSMutableArray new];
-        for( NSArray *_outputs in _nets )
+        _errors = [NSMutableArray new];
+        NSInteger _outputIndex = -1;
+        for( NSNumber *_netOutput in _netOutputs )
         {
-            for( NSNumber *_output in _outputs )
-            {
-                //取出輸出層神經元的輸出結果
-                float _outputValue = [_output floatValue];
-                //計算與期望值的誤差
-                float _errorValue  = _outputValue * ( 1 - _outputValue ) * ( self._goalValue - _outputValue );
-                //多輸出時使用 1/2 x SUM( Tj - Oj )^2, (a-b)^2 = a^2 - 2ab + b^2
-                //float _errorValue = ( ( self._goalValue * self._goalValue ) - ( 2 * self._goalValue * _outputValue ) + ( _outputValue * _outputValue ) ) / 2.0f;
-                [_errors addObject:[NSNumber numberWithFloat:_errorValue]];
-            }
+            ++_outputIndex;
+            //取出輸出層神經元的輸出結果
+            float _outputValue = [_netOutput floatValue];
+            float _targetValue = [[self._goalValues objectAtIndex:_outputIndex] floatValue] / self._maxMultiple;
+            //計算與期望值的誤差
+            float _errorValue  = _outputValue * ( 1 - _outputValue ) * ( _targetValue - _outputValue );
+            [_errors addObject:[NSNumber numberWithFloat:_errorValue]];
         }
-        //NSLog(@"_errors : %@", _errors);
-        return _errors;
     }
-    return nil;
+    return _errors;
 }
 
 /*
@@ -425,30 +381,33 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(NSArray *)_calculateNetsError
 {
-    self._outputErrors   = [self _calculateOutputError];
-    NSArray *_outputNets = self._outputErrors;
-    if( _outputNets )
+    NSMutableArray *_netErrors = nil;
+    self._outputErrors         = [self _calculateOutputError];
+    NSArray *_errors           = self._outputErrors;
+    if( _errors )
     {
-        NSMutableArray *_netErrors = [NSMutableArray new];
-        //取出輸出層的誤差值倒算回去每一個神經元的誤差值
-        for( NSNumber *_outpurError in _outputNets )
+        _netErrors    = [NSMutableArray new];
+        int _netIndex = -1;
+        for( NSNumber *_output in self._hiddenOutputs )
         {
-            float _resultError = [_outpurError floatValue];
-            int _netIndex      = -1;
-            for( NSArray *_outputs in self._hiddenOutputs )
+            ++_netIndex;
+            float _hiddenOutput = [_output floatValue];
+            int _weightIndex    = -1;
+            float _sumError     = 0.0f;
+            //SUM output layer errors
+            for( NSNumber *_outputError in _errors )
             {
-                ++_netIndex;
-                float _netWeight    = [[self.hiddenWeights objectAtIndex:_netIndex] floatValue];
-                float _hiddenOutput = [[_outputs firstObject] floatValue];
-                //O4    x ( 1 - O4 )    x Error6 x W46
-                //0.332 x ( 1 - 0.332 ) x 0.1311 x -0.3
-                float _hiddenError  = _hiddenOutput * ( 1 - _hiddenOutput ) * _resultError * _netWeight;
-                [_netErrors addObject:[NSNumber numberWithFloat:_hiddenError]];
+                ++_weightIndex;
+                float _netWeight    = [[[self.hiddenWeights objectAtIndex:_netIndex] objectAtIndex:_weightIndex] floatValue];
+                float _hiddenError  = [_outputError floatValue] * _netWeight;
+                _sumError          += _hiddenError;
             }
+            //微分, S * Hidden layer net output * ( 1 - Hidden layer net output )
+            _sumError *= _hiddenOutput * ( 1 - _hiddenOutput );
+            [_netErrors addObject:[NSNumber numberWithFloat:_sumError]];
         }
-        return _netErrors;
     }
-    return nil;
+    return _netErrors;
 }
 
 /*
@@ -458,62 +417,97 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(BOOL)_refreshNetsWeights
 {
-    if( self._forceStopTraining )
+    if( self._forceStop )
     {
         [self _stopTraining];
         return NO;
     }
     
-    self.isTraining = YES;
+    self.isTraining         = YES;
     BOOL _onePatternTrained = NO;
     //隱藏層神經元的輸出誤差值
-    NSArray *_hiddenErrors = [self _calculateNetsError];
-    //NSLog(@"_hiddenErrors : %@\n\n\n", _hiddenErrors);
+    NSArray *_hiddenErrors  = [self _calculateNetsError];
     if( _hiddenErrors )
     {
-        //先更新輸出層神經元的偏權值
+        //更新隱藏層與輸出層的偏權值和權重
+        NSMutableArray *_updatedOutputBiases  = [NSMutableArray new];
+        NSMutableArray *_updatedHiddenWeights = [NSMutableArray new];
+        NSMutableArray *_updatedHiddenBiases  = [NSMutableArray new];
+        int _outputIndex                      = -1;
         for( NSNumber *_outputError in self._outputErrors )
         {
-            float _errorValue = [_outputError floatValue];
-            self.outputBias   = self.outputBias + ( self.learningRate * _errorValue );
-            //再更新每一條線的權重
-            //先算隱藏層到輸出層的更新權重
-            int _hiddenIndex  = -1;
-            NSArray *_hiddens = [self.hiddenWeights copy];
-            for( NSNumber *_netWeight in _hiddens )
+            ++_outputIndex;
+            //更新輪出層偏權值
+            float _targetError             = [_outputError floatValue];
+            float _outputBias              = [[self.outputBiases objectAtIndex:_outputIndex] floatValue];
+            _outputBias                   += ( self.learningRate * _targetError );
+            [_updatedOutputBiases addObject:[NSNumber numberWithFloat:_outputBias]];
+            
+            //更新隱藏層到輸出層的所有權重
+            NSMutableArray *_unsortWeights = [NSMutableArray new];
+            int _netIndex                  = -1;
+            NSArray *_weights              = [self.hiddenWeights copy];
+            for( NSArray *_netWeights in _weights )
             {
-                ++_hiddenIndex;
-                NSArray *_outputs   = [self._hiddenOutputs objectAtIndex:_hiddenIndex];
-                float _resetWeight  = [_netWeight floatValue] + ( self.learningRate * _errorValue * [[_outputs firstObject] floatValue] );
+                ++_netIndex;
+                float _hiddenOutput  = [[self._hiddenOutputs objectAtIndex:_netIndex] floatValue];
+                float _weight        = [[_netWeights objectAtIndex:_outputIndex] floatValue];
+                
+                //NSLog(@"here 2, _hiddenOutput, _weight = %f, %f", _hiddenOutput, _weight);
+                
+                _weight             += ( self.learningRate * _targetError * _hiddenOutput );
                 //原公式在精度上較差，故暫不採用 : learning rate * last error value * last output value
-                //float _resetWeight  = self.learningRate * _errorValue * [[_outputs firstObject] floatValue];
-                //修正隱藏層到輸出層的權重
-                [self.hiddenWeights replaceObjectAtIndex:_hiddenIndex withObject:[NSNumber numberWithFloat:_resetWeight]];
+                //float _weight      = self.learningRate * _targetError * _hiddenOutput;
+                //將連接到同一個 Output Net 的權重值作修正後的儲存，例如 : 連接到 Net8 的有 W58, W68, W78，都會放在同一維度陣列裡
+                [_unsortWeights addObject:[NSNumber numberWithFloat:_weight]];
             }
-            _hiddens = nil;
+            //將相對應 Hidden Layer Net 的權重放入, _unsortWeights = @[W58, W68, W78]、@[W59, W69, W79] ...
+            [_updatedHiddenWeights addObject:_unsortWeights];
+            //[self.hiddenWeights replaceObjectAtIndex:_hiddenIndex withObject:[NSNumber numberWithFloat:_weight]];
+            _weights = nil;
         }
+        [self.outputBiases removeAllObjects];
+        [self.outputBiases addObjectsFromArray:_updatedOutputBiases];
+        _updatedOutputBiases = nil;
         
-        //接著更新隱藏層神經元的偏權值
-        int _netIndex = -1;
-        for( NSNumber *_netError in _hiddenErrors )
+        //更新隱藏層神經元的偏權值
+        for( NSNumber *_hiddenError in _hiddenErrors )
         {
-            ++_netIndex;
             //原使用公式，精度稍高，但迭代數大增
-            //float _netBias     = [[self.hiddenBiases objectAtIndex:_netIndex] floatValue];
-            //float _resetWeight = _netBias + ( self.learningRate * [_netError floatValue] );
+            //float _netBias         = [[self.hiddenBiases objectAtIndex:_outputIndex] floatValue];
+            //float _renewHiddenBias = _netBias + ( self.learningRate * [_hiddenError floatValue] );
             //原公式，能幫助提前收斂，精度可
-            float _resetWeight = -self.learningRate * [_netError floatValue];
-            //修正隱藏層偏權值
-            [self.hiddenBiases replaceObjectAtIndex:_netIndex withObject:[NSNumber numberWithFloat:_resetWeight]];
+            float _renewHiddenBias   = -self.learningRate * [_hiddenError floatValue];
+            [_updatedHiddenBiases addObject:[NSNumber numberWithFloat:_renewHiddenBias]];
+        }
+        [self.hiddenBiases removeAllObjects];
+        [self.hiddenBiases addObjectsFromArray:_updatedHiddenBiases];
+        _updatedHiddenBiases = nil;
+        
+        NSMutableArray *_sortedWeights = [NSMutableArray new];
+        NSInteger _hiddenCount         = [self countHiddenNets];
+        for( int _netIndex=0; _netIndex < _hiddenCount; _netIndex++ )
+        {
+            NSMutableArray *_sameWeights = [NSMutableArray new];
+            for( NSArray *_weights in _updatedHiddenWeights )
+            {
+                NSNumber *_updatedWeight = [_weights objectAtIndex:_netIndex];
+                [_sameWeights addObject:_updatedWeight];
+            }
+            [_sortedWeights addObject:_sameWeights];
         }
         
-        //最後更新所有輸入層到隱藏的權重
+        [self.hiddenWeights removeAllObjects];
+        [self.hiddenWeights addObjectsFromArray:_sortedWeights];
+        _sortedWeights = nil;
+        
+        //最後更新所有輸入層到隱藏層的權重
         NSArray *_weights = [self.inputWeights copy];
         int _inputIndex = -1;
         for( NSArray *_netWeights in _weights )
         {
             ++_inputIndex;
-            int _weightIndex = -1;
+            int _weightIndex              = -1;
             NSMutableArray *_resetWeights = [NSMutableArray new];
             for( NSNumber *_everyWeight in _netWeights )
             {
@@ -540,8 +534,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(void)_formatMaxMultiple
 {
     //先找出期望值的最大絕對值
-    NSNumber *_max  = [self.outputGoals valueForKeyPath:@"@max.self"];
-    NSNumber *_min  = [self.outputGoals valueForKeyPath:@"@min.self"];
+    NSNumber *_max  = [self._compareTargets valueForKeyPath:@"@max.self"];
+    NSNumber *_min  = [self._compareTargets valueForKeyPath:@"@min.self"];
     double _fabsMax = fabs(_max.doubleValue);
     double _fabsMin = fabs(_min.doubleValue);
     double _realMax = MAX(_fabsMax, _fabsMin);
@@ -567,8 +561,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
      *             [3]
      *     這為第 1 筆訓練資料，當成輸入層神經元代入，此時輸入層就有 3 顆神經元。
      */
-    //先正規化處理資料，以避免異常狀況發生
-    [self _formatOutputGoals];
     //開始代入 X1, X2 ... Xn 各組的訓練資料
     for( NSArray *_inputs in self.inputs )
     {
@@ -579,12 +571,13 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
          *           輸入 X1[1, 0, 0]，其期望輸出為 1.0
          *           輸入 X2[0, 1, 0]，其期望輸出為 2.0
          *           輸入 X3[0, 0, 1]，其期望輸出為 3.0
+         *      將輸出期望值正規化後，會變成 0.1, 0.2, 0.3
          *      以此類推。
          */
         //不論正負號都先轉成絕對值，我只要求得除幾位數變成小數點
         //NSLog(@"%i", (int)log10f(-81355.555)); //-2147483648
         //NSLog(@"%i", (int)log10f(81355.555)); //4 個 10 倍
-        self._goalValue     = [[self.outputGoals objectAtIndex:self._patternIndex] doubleValue] / self._maxMultiple;
+        self._goalValues    = [self.outputGoals objectAtIndex:self._patternIndex];
         self._hiddenOutputs = [self _sumHiddenLayerNetWeightsFromInputs:_inputs];
         //NSLog(@"\n\n_goalValue : %lf, _hiddenOutputs : %@\n\n\n", self._goalValue, self._hiddenOutputs);
         //更新權重失敗，代表訓練異常，中止 !
@@ -665,7 +658,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize hiddenWeights       = _hiddenWeights;
 @synthesize hiddenBiases        = _hiddenBiases;
 @synthesize countHiddenNets     = _countHiddenNets;
-@synthesize outputBias          = _outputBias;
+@synthesize outputBiases        = _outputBiases;
 @synthesize outputResults       = _outputResults;
 @synthesize outputGoals         = _outputGoals;
 @synthesize learningRate        = _learningRate;
@@ -681,13 +674,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize eachGeneration      = _eachGeneration;
 
 @synthesize _hiddenOutputs;
-@synthesize _goalValue;
+@synthesize _goalValues;
 @synthesize _outputErrors;
-@synthesize _forceStopTraining;
+@synthesize _forceStop;
 @synthesize _originalParameters;
 @synthesize _isDoneSave;
 @synthesize _patternIndex;
 @synthesize _maxMultiple;
+@synthesize _compareTargets;
 
 +(instancetype)sharedNetwork
 {
@@ -712,23 +706,20 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 
 #pragma --mark Settings Public Methods
 /*
- * @ 各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )
+ * @params, _patterns : 各輸入向量陣列值
+ * @params, _weights  : 輸入層各向量值到隱藏層神經元的權重
+ * @params, _goals    : 每一筆輸入向量的期望值( 輸出期望 )
  */
--(void)addPatterns:(NSArray *)_patterns outputGoal:(float)_goal
+-(void)addPatterns:(NSArray *)_patterns outputGoals:(NSArray *)_goals
 {
     [_inputs addObject:_patterns];
-    [_outputGoals addObject:[NSNumber numberWithFloat:_goal]];
+    [_outputGoals addObject:_goals]; //@[ @[1.0, 0.8, 0.2], @[0.76, 0.5, 0.89], ... ]
+    [self._compareTargets addObjectsFromArray:_goals];
 }
 
-/*
- * @ 輸入層各向量值到隱藏層神經元的權重
- *   - 連結同一個 Net 的就一組一組分開，有幾個 Hidden Net 就會有幾組
- */
 -(void)addPatternWeights:(NSArray *)_weights
 {
-    //@[ @[W14, W15], @[W24, W25], @[W34, W35] ]
-    //@[ @[@0.2, @-0.3], @[@0.4, @0.1], @[@-0.5, @0.2] ]
-    [_inputWeights addObject:_weights];
+    [_inputWeights addObject:_weights]; //@[ @[W14, W15], @[W24, W25], @[W34, W35] ]
 }
 
 /*
@@ -736,14 +727,23 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  *   - _netBias 隱藏層神經元 Net # 的偏權值
  *   - _netWeights 隱藏層神經元 Net # 到下一層神經元的權重值
  */
--(void)addHiddenLayerNetBias:(float)_netBias netWeight:(float)_netWeight
+-(void)addHiddenLayerNetBias:(float)_netBias outputWeights:(NSArray *)_outputWeights
 {
     [_hiddenBiases addObject:[NSNumber numberWithFloat:_netBias]];
-    [_hiddenWeights addObject:[NSNumber numberWithFloat:_netWeight]];
+    //@[ @[W57, W58, W59], @[W67, W68, W69], ... ]
+    [_hiddenWeights addObject:_outputWeights];
 }
 
 /*
- * @ Random all hidden-net weights, net biases, output net bias.
+ * @ 設定 Output Layer Nets 的 Biases
+ */
+-(void)addOutputBiases:(NSArray *)_biases
+{
+    [_outputBiases addObjectsFromArray:_biases];
+}
+
+/*
+ * @ Random all hidden-net weights, nets biases, output nets biases.
  *   - 亂數設定隱藏層神經元的權重、神經元偏權值、輸出層神經元偏權值
  *
  * @ 如果不指定神經元的權重值，那就自行依照「輸入向量的神經元個數做平方」，也就是輸入層如 2 個神經元，
@@ -761,7 +761,11 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     CGFloat _randomMin        = -1.0f;
     //單組輸入向量有多長，就有多少顆輸入層神經元
     NSInteger _inputNetCount  = [[_inputs firstObject] count];
-    NSInteger _outputNetCount = 1;
+    NSInteger _outputNetCount = [[_outputGoals firstObject] count];
+    if( _outputNetCount < 1 )
+    {
+        _outputNetCount = 1;
+    }
     //輸入層到隱藏層的輸入層 Net 數量 = ( (輸入層的 Net 數 * 輸出層 Net 數) ^ 1/2  )
     NSInteger _hiddenNetCount = (int)powf(( _inputNetCount * _outputNetCount ), 0.5f); //_inputNetCount;
     if( _hiddenNetCount < 1 )
@@ -770,24 +774,43 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         _hiddenNetCount = 1;
     }
     
-    //隱藏層神經元 MAX is 20
-    if( _hiddenNetCount > MAX_HIDDEN_NETS_COUNT )
-    {
-        _hiddenNetCount = MAX_HIDDEN_NETS_COUNT;
-    }
-    
     if( [_inputWeights count] < 1 )
     {
         //計算共有幾條隱藏層的權重線
         //NSInteger _totalLines = _hiddenNetCount * _inputNetCount;
         for( int i=0; i<_inputNetCount; i++ )
         {
-            NSMutableArray *_netWeights = [NSMutableArray new];
+            NSMutableArray *_toHiddenWeights = [NSMutableArray new];
             for( int j=0; j<_hiddenNetCount; j++ )
             {
-                [_netWeights addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
+                [_toHiddenWeights addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
             }
-            [_inputWeights addObject:_netWeights];
+            [_inputWeights addObject:_toHiddenWeights];
+        }
+    }
+    
+    NSInteger _outputCount = [_outputBiases count];
+    if( _outputCount < _outputNetCount )
+    {
+        //輸出層神經元的偏權值
+        for( int _i=0; _i<_outputNetCount; _i++ )
+        {
+            [_outputBiases addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
+        }
+    }
+    
+    NSInteger _hiddenCount = [_hiddenWeights count];
+    if( _hiddenCount < 1 )
+    {
+        //隱藏層神經元個數 x 輸出層神經元個數，就有幾條至輸出層神經元的權重值
+        for( int i=0; i<_hiddenNetCount; i++ )
+        {
+            NSMutableArray *_toOutputweights = [NSMutableArray new];
+            for( int j=0; j<_outputNetCount; j++ )
+            {
+                [_toOutputweights addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
+            }
+            [_hiddenWeights addObject:_toOutputweights];
         }
     }
     
@@ -799,18 +822,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             [_hiddenBiases addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
         }
     }
-    
-    if( [_hiddenWeights count] < 1 )
-    {
-        //有幾顆隱藏層神經元，就有幾條至輸出層神經元的權重值
-        for( int i=0; i<_hiddenNetCount; i++ )
-        {
-            [_hiddenWeights addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
-        }
-    }
-    
-    //輸出層神經元的偏權值
-    _outputBias = [self _randomMax:_randomMax min:_randomMin];
     
 }
 
@@ -868,7 +879,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(void)pause
 {
     _isTraining        = NO;
-    _forceStopTraining = YES;
+    _forceStop = YES;
 }
 
 /*
@@ -876,7 +887,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)continueTraining
 {
-    _forceStopTraining = NO;
+    _forceStop = NO;
     //[self _formatMaxMultiple];
     [self _startTraining];
 }
@@ -891,11 +902,16 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 }
 
 /*
- * @ 
- *   - 單純使用訓練好的網路作輸出，不跑導傳遞的訓練方法
+ * @ 單純使用訓練好的網路作輸出，不跑導傳遞修正網路
  */
--(void)directOutput
+-(void)directOutputAtInputs:(NSArray *)_rawInputs
 {
+    if( _rawInputs != nil )
+    {
+        [_inputs removeAllObjects];
+        [_inputs addObject:_rawInputs];
+    }
+    //取出 Inputs 的第 1 筆 Raw Data
     NSArray *_trainInputs  = [_inputs firstObject];
     dispatch_queue_t queue = dispatch_queue_create("com.krbpn.trained-network", NULL);
     dispatch_async(queue, ^(void){
@@ -931,7 +947,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     _bpnNetwork.inputWeights         = _inputWeights;
     _bpnNetwork.hiddenWeights        = _hiddenWeights;
     _bpnNetwork.hiddenBiases         = _hiddenBiases;
-    _bpnNetwork.outputBias           = _outputBias;
+    _bpnNetwork.outputBiases         = _outputBiases;
     _bpnNetwork.outputResults        = _outputResults;
     _bpnNetwork.outputGoals          = _outputGoals;
     _bpnNetwork.learningRate         = _learningRate;
@@ -967,7 +983,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             _inputWeights       = _recoverNetwork.inputWeights;
             _hiddenWeights      = _recoverNetwork.hiddenWeights;
             _hiddenBiases       = _recoverNetwork.hiddenBiases;
-            _outputBias         = _recoverNetwork.outputBias;
+            _outputBiases       = _recoverNetwork.outputBiases;
             _outputResults      = _recoverNetwork.outputResults;
             _outputGoals        = _recoverNetwork.outputGoals;
             _learningRate       = _recoverNetwork.learningRate;
@@ -1010,14 +1026,11 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     if( self._maxMultiple != 1 )
     {
         NSMutableArray *_formatedOutputResults = [NSMutableArray new];
-        for( NSArray *_groupResults in _outputResults )
+        for( NSNumber *_result in _outputResults )
         {
-            for( NSNumber *_result in _groupResults )
-            {
-                //還原每一個 goalValue 當初設定的原同等位同寬度的結果值，即返回原值域
-                double _recoveredRetuls = [_result doubleValue] * self._maxMultiple;
-                [_formatedOutputResults addObject:[NSNumber numberWithDouble:_recoveredRetuls]];
-            }
+            //還原每一個 goalValue 當初設定的原同等位同寬度的結果值，即返回原值域
+            double _recoveredRetuls = [_result doubleValue] * self._maxMultiple;
+            [_formatedOutputResults addObject:[NSNumber numberWithDouble:_recoveredRetuls]];
         }
         self.outputResults     = nil;
         _outputResults         = [[NSArray alloc] initWithArray:_formatedOutputResults];
@@ -1028,7 +1041,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     return @{KRBPNTrainedInfoInputWeights      : _inputWeights,
              KRBPNTrainedInfoHiddenWeights     : _hiddenWeights,
              KRBPNTrainedInfoHiddenBiases      : _hiddenBiases,
-             KRBPNTrainedInfoOutputBias        : [NSNumber numberWithDouble:_outputBias],
+             KRBPNTrainedInfoOutputBiases      : _outputBiases,
              KRBPNTrainedInfoOutputResults     : _outputResults,
              KRBPNTrainedInfoTrainedGeneration : [NSNumber numberWithInteger:_trainingGeneration]};
 }

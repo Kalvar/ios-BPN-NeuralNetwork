@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V1.5 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V1.9 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -39,7 +39,7 @@ typedef void(^KRBPNEachGeneration)(NSInteger times, NSDictionary *trainedInfo);
  *      - KRBPNTrainedInfoInputWeights      : NSMutableArray, 調整後的輸入層各向量值到隱藏層神經元的權重
  *      - KRBPNTrainedInfoHiddenWeights     : NSMutableArray, 調整後的隱藏層神經元到輸出層神經元的權重值
  *      - KRBPNTrainedInfoHiddenBiases      : NSMutableArray, 調整後的隱藏層神經元的偏權值
- *      - KRBPNTrainedInfoOutputBias        : double,         調整後的輸出層神經元偏權值
+ *      - KRBPNTrainedInfoOutputBiases      : NSMutableArray, 調整後的輸出層神經元偏權值
  *      - KRBPNTrainedInfoOutputResults     : NSArray,        輸出結果
  *      - KRBPNTrainedInfoTrainedGeneration : NSInteger,      已訓練到第幾代
  *
@@ -47,7 +47,7 @@ typedef void(^KRBPNEachGeneration)(NSInteger times, NSDictionary *trainedInfo);
 static NSString *KRBPNTrainedInfoInputWeights      = @"KRBPNTrainedInfoInputWeights";
 static NSString *KRBPNTrainedInfoHiddenWeights     = @"KRBPNTrainedInfoHiddenWeights";
 static NSString *KRBPNTrainedInfoHiddenBiases      = @"KRBPNTrainedInfoHiddenBiases";
-static NSString *KRBPNTrainedInfoOutputBias        = @"KRBPNTrainedInfoOutputBias";
+static NSString *KRBPNTrainedInfoOutputBiases      = @"KRBPNTrainedInfoOutputBiases";
 static NSString *KRBPNTrainedInfoOutputResults     = @"KRBPNTrainedInfoOutputResults";
 static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGeneration";
 
@@ -71,7 +71,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 //隱藏層有幾顆神經元
 @property (nonatomic, assign) NSInteger countHiddenNets;
 //輸出層神經元偏權值
-@property (nonatomic, assign) double outputBias;
+@property (nonatomic, strong) NSMutableArray *outputBiases;
 //輸出層的輸出值( 輸出結果 )
 @property (nonatomic, strong) NSArray *outputResults;
 //所有輸入向量( 每一組訓練資料 )的各別輸出期望值
@@ -100,9 +100,10 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 -(instancetype)init;
 
 #pragma --mark Settings Public Methods
--(void)addPatterns:(NSArray *)_patterns outputGoal:(float)_goal;
+-(void)addPatterns:(NSArray *)_patterns outputGoals:(NSArray *)_goals;
 -(void)addPatternWeights:(NSArray *)_weights;
--(void)addHiddenLayerNetBias:(float)_netBias netWeight:(float)_netWeight;
+-(void)addHiddenLayerNetBias:(float)_netBias outputWeights:(NSArray *)_outputWeights;
+-(void)addOutputBiases:(NSArray *)_biases;
 -(void)randomWeights;
 
 #pragma --mark Training Public Methods
@@ -113,7 +114,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 -(void)pause;
 -(void)continueTraining;
 -(void)reset;
--(void)directOutput;
+-(void)directOutputAtInputs:(NSArray *)_rawInputs;
 
 #pragma --mark Trained Network Public Methods
 -(void)saveNetwork;
