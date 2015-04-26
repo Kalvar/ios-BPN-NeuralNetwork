@@ -23,10 +23,10 @@
 {
     //Setups any detail, and 2 outputs, you could set more outputs.
     
-    //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，因使用雙 S 曲線轉換函數，故 Input 值域須為 [0, 1]，輸出目標為 [0, 1]
+    //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，因使用 S 形轉換函數，故 Input 值域須為 [0, 1]，輸出目標為 [0, 1]
     [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f, @0.8f]]; //Pattern 1
     [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoals:@[@0.1f, @0.1f]];   //Pattern 2
-    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@1.0f, @0.9f]]; //Pattern 3
+    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.95f, @0.9f]]; //Pattern 3
     
     //輸入層各向量值到隱藏層神經元的權重 ( 連結同一個 Net 的就一組一組分開，有幾個 Hidden Net 就會有幾組 )
     [_krBPN addPatternWeights:@[@0.2, @-0.3]]; //W15, W16
@@ -71,7 +71,7 @@
     
     [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f]]; //Pattern 1
     [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoals:@[@0.1f]];   //Pattern 2
-    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@1.0f]]; //Pattern 3
+    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.9f]]; //Pattern 3
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
     //訓練完成時( Training complete )
@@ -267,10 +267,10 @@
     }];
     
     //Setup anything by yourself, and 2 outputs.
-    //[self useMethod1];
+    //[self useSample1];
     
     //Only setup patterns and output goals, and 1 output.
-    //[self useMethod2];
+    //[self useSample2];
     
     //Only setup patterns and output goals, then learning to identify numbers 0 to 9.
     [self useSample3];

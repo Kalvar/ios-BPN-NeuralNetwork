@@ -66,6 +66,9 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 //儲存要用於比較計算 _maxMultiple 值的所有 Target Outputs
 @property (nonatomic, strong) NSMutableArray *_compareTargets;
 
+//儲存每一個迭代的誤差總和
+@property (nonatomic, strong) NSMutableArray *_iterationErrors;
+
 @end
 
 @implementation KRBPN (fixInitials)
@@ -110,6 +113,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     self._goalValues         = nil;
     self._originalParameters = [NSMutableDictionary new];
     self._compareTargets     = [NSMutableArray new];
+    self._iterationErrors    = [NSMutableArray new];
 }
 
 @end
@@ -119,12 +123,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(void)_stopTraining
 {
     self.isTraining = NO;
-    /*
-    if( self.trainingCompletion )
-    {
-        self.trainingCompletion(NO, nil);
-    }
-     */
 }
 
 -(void)_completedTraining
@@ -386,6 +384,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     NSArray *_errors           = self._outputErrors;
     if( _errors )
     {
+        [self._iterationErrors addObject:[self._outputErrors copy]];
         _netErrors    = [NSMutableArray new];
         int _netIndex = -1;
         for( NSNumber *_output in self._hiddenOutputs )
@@ -452,9 +451,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
                 ++_netIndex;
                 float _hiddenOutput  = [[self._hiddenOutputs objectAtIndex:_netIndex] floatValue];
                 float _weight        = [[_netWeights objectAtIndex:_outputIndex] floatValue];
-                
-                //NSLog(@"here 2, _hiddenOutput, _weight = %f, %f", _hiddenOutput, _weight);
-                
                 _weight             += ( self.learningRate * _targetError * _hiddenOutput );
                 //原公式在精度上較差，故暫不採用 : learning rate * last error value * last output value
                 //float _weight      = self.learningRate * _targetError * _hiddenOutput;
@@ -548,7 +544,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(void)_startTraining
 {
     ++self.trainingGeneration;
-    self._patternIndex = -1;
+    self._patternIndex    = -1;
     /*
      * @ 依公式所說，X(i) 輸入向量應做轉置矩陣運算，但轉置矩陣須耗去多餘效能，
      *   因此，這裡暫不採用直接先轉成轉置矩陣的動作，
@@ -573,13 +569,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
          *           輸入 X3[0, 0, 1]，其期望輸出為 3.0
          *      將輸出期望值正規化後，會變成 0.1, 0.2, 0.3
          *      以此類推。
+         *
+         * @ 不論正負號都先轉成絕對值，我只要求得除幾位數變成小數點
+         *   - NSLog(@"%i", (int)log10f(-81355.555)); //-2147483648
+         *   - NSLog(@"%i", (int)log10f(81355.555)); //4 個 10 倍
+         *
          */
-        //不論正負號都先轉成絕對值，我只要求得除幾位數變成小數點
-        //NSLog(@"%i", (int)log10f(-81355.555)); //-2147483648
-        //NSLog(@"%i", (int)log10f(81355.555)); //4 個 10 倍
         self._goalValues    = [self.outputGoals objectAtIndex:self._patternIndex];
         self._hiddenOutputs = [self _sumHiddenLayerNetWeightsFromInputs:_inputs];
-        //NSLog(@"\n\n_goalValue : %lf, _hiddenOutputs : %@\n\n\n", self._goalValue, self._hiddenOutputs);
         //更新權重失敗，代表訓練異常，中止 !
         if ( ![self _refreshNetsWeights] )
         {
@@ -682,6 +679,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize _patternIndex;
 @synthesize _maxMultiple;
 @synthesize _compareTargets;
+@synthesize _iterationErrors;
 
 +(instancetype)sharedNetwork
 {
@@ -745,10 +743,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 /*
  * @ Random all hidden-net weights, nets biases, output nets biases.
  *   - 亂數設定隱藏層神經元的權重、神經元偏權值、輸出層神經元偏權值
- *
- * @ 如果不指定神經元的權重值，那就自行依照「輸入向量的神經元個數做平方」，也就是輸入層如 2 個神經元，
- *   則隱藏層神經元就預設為 2^2 = 4 個 ( 參考 ANFIS ) 的作法，而每一個輸入層到隱藏層的權重值，
- *   就直接亂數給 -1.0 ~ 1.0 之間的值，而每一個神經元的偏權值也是亂數給 -1.0 ~ 1.0。
  */
 -(void)randomWeights
 {
@@ -756,9 +750,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [_inputWeights removeAllObjects];
     [_hiddenBiases removeAllObjects];
     [_hiddenWeights removeAllObjects];
-    //亂數給權重值、偏權值
-    CGFloat _randomMax        = 1.0f;
-    CGFloat _randomMin        = -1.0f;
     //單組輸入向量有多長，就有多少顆輸入層神經元
     NSInteger _inputNetCount  = [[_inputs firstObject] count];
     NSInteger _outputNetCount = [[_outputGoals firstObject] count];
@@ -773,17 +764,21 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         //最少 1 顆
         _hiddenNetCount = 1;
     }
+    //亂數給權重值、偏權值
+    float _randomMax = 0.5f;
+    float _randomMin = -0.5f;
     
     if( [_inputWeights count] < 1 )
     {
-        //計算共有幾條隱藏層的權重線
-        //NSInteger _totalLines = _hiddenNetCount * _inputNetCount;
+        //權重初始化規則 : ( 0.5 / 此層神經元個數 ) ~ ( -0.5 / 此層神經元個數 )，其它層以此類推
+        float _inputMax = _randomMax / _inputNetCount;
+        float _inputMin = _randomMin / _inputNetCount;
         for( int i=0; i<_inputNetCount; i++ )
         {
             NSMutableArray *_toHiddenWeights = [NSMutableArray new];
             for( int j=0; j<_hiddenNetCount; j++ )
             {
-                [_toHiddenWeights addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
+                [_toHiddenWeights addObject:[NSNumber numberWithDouble:[self _randomMax:_inputMax min:_inputMin]]];
             }
             [_inputWeights addObject:_toHiddenWeights];
         }
@@ -802,13 +797,15 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     NSInteger _hiddenCount = [_hiddenWeights count];
     if( _hiddenCount < 1 )
     {
+        float _hiddenMax   = _randomMax / _hiddenNetCount;
+        float _hiddenMin   = _randomMin / _hiddenNetCount;
         //隱藏層神經元個數 x 輸出層神經元個數，就有幾條至輸出層神經元的權重值
         for( int i=0; i<_hiddenNetCount; i++ )
         {
             NSMutableArray *_toOutputweights = [NSMutableArray new];
             for( int j=0; j<_outputNetCount; j++ )
             {
-                [_toOutputweights addObject:[NSNumber numberWithDouble:[self _randomMax:_randomMax min:_randomMin]]];
+                [_toOutputweights addObject:[NSNumber numberWithDouble:[self _randomMax:_hiddenMax min:_hiddenMin]]];
             }
             [_hiddenWeights addObject:_toOutputweights];
         }
