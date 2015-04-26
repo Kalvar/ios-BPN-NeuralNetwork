@@ -65,9 +65,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @property (nonatomic, assign) NSInteger _maxMultiple;
 //儲存要用於比較計算 _maxMultiple 值的所有 Target Outputs
 @property (nonatomic, strong) NSMutableArray *_compareTargets;
-
 //儲存每一個迭代的誤差總和
-@property (nonatomic, strong) NSMutableArray *_iterationErrors;
+//@property (nonatomic, strong) NSMutableArray *_iterationErrors;
 
 @end
 
@@ -113,7 +112,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     self._goalValues         = nil;
     self._originalParameters = [NSMutableDictionary new];
     self._compareTargets     = [NSMutableArray new];
-    self._iterationErrors    = [NSMutableArray new];
+    //self._iterationErrors    = [NSMutableArray new];
 }
 
 @end
@@ -384,7 +383,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     NSArray *_errors           = self._outputErrors;
     if( _errors )
     {
-        [self._iterationErrors addObject:[self._outputErrors copy]];
+        //[self._iterationErrors addObject:[self._outputErrors copy]];
         _netErrors    = [NSMutableArray new];
         int _netIndex = -1;
         for( NSNumber *_output in self._hiddenOutputs )
@@ -679,7 +678,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize _patternIndex;
 @synthesize _maxMultiple;
 @synthesize _compareTargets;
-@synthesize _iterationErrors;
+//@synthesize _iterationErrors;
 
 +(instancetype)sharedNetwork
 {
