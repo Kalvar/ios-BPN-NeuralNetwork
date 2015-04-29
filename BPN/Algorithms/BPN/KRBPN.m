@@ -240,6 +240,38 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 
 @end
 
+@implementation KRBPN (fixFOfNets)
+/*
+ * @ S 形函數
+ *   - [0.0, 1.0]
+ */
+-(float)_fOfSigmoid:(float)_x
+{
+    return ( 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _x)) ) );
+}
+
+/*
+ * @ 雙曲線函數
+ *   - [-1.0, 1.0]
+ */
+-(float)_fOfTanh:(float)_x
+{
+    double e = M_E;
+    return ( powf(e, _x) - powf(e, -_x) ) / ( powf(e, _x) + powf(e, -_x) );
+}
+
+/*
+ * @ Fuzzy function
+ *   - Waiting for next time for Fuzzy combined.
+ */
+-(float)_fOfFuzzy:(float)_x
+{
+    //Do Fuzzy ...
+    return -0.1f;
+}
+
+@end
+
 @implementation KRBPN (fixTrainings)
 /*
  * @ 計算隱藏層各個神經元( Nets )的輸出值
@@ -307,7 +339,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         //減同維度的神經元偏權值
         _sumOfNet    -= [_partialWeight floatValue];
         //代入活化函式 ( 用 1 除之，則預設限定範圍在 ~ 1.0 以下 ) 1 / 1 + e^(-alpha * sumOfNet)
-        float _fOfNet = 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) );
+        float _fOfNet = [self _fOfSigmoid:_sumOfNet]; //[self _fOfTanh:_sumOfNet];
         //加入計算好的輸入向量值，輸入向量是多少維度，輸出就多少維度，例如 : x1[1, 2, 3]，則 net(j) 就要為 [4, 5, 6] 同等維度
         [_fOfNets addObject:[NSNumber numberWithFloat:_fOfNet]];
     }
@@ -338,7 +370,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
                 _sumOfNet               += [[_hideOutputs objectAtIndex:_netIndex] floatValue] * [_outputWeight floatValue];
             }
             _sumOfNet        += [_outputBias floatValue];
-            float _netOutput  = 1 / ( 1 + powf(M_E, (-(self.fOfAlpha) * _sumOfNet)) ); //fOfNet
+            float _netOutput  = [self _fOfSigmoid:_sumOfNet]; //[self _fOfTanh:_sumOfNet];
             [_fOfNets addObject:[NSNumber numberWithFloat:_netOutput]];
         }
     }
