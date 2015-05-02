@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BPN V1.9
+//  BPN V1.9.1
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -19,26 +19,29 @@
 
 @synthesize _krBPN;
 
+//Setups any detail, and 2 outputs, you could set more outputs.
 -(void)useSample1
 {
-    //Setups any detail, and 2 outputs, you could set more outputs.
-    
     //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，因使用 S 形轉換函數，故 Input 值域須為 [0, 1]，輸出目標為 [0, 1]
-    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f, @0.8f]]; //Pattern 1
-    [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoals:@[@0.1f, @0.1f]];   //Pattern 2
+    //Add the patterns, the weights connect with hidden layer, the output targets
+    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f, @0.8f]];  //Pattern 1
+    [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoals:@[@0.1f, @0.1f]];    //Pattern 2
     [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.95f, @0.9f]]; //Pattern 3
     
     //輸入層各向量值到隱藏層神經元的權重 ( 連結同一個 Net 的就一組一組分開，有幾個 Hidden Net 就會有幾組 )
+    //Add pattern-weights in Input layer to Hidden Layer
     [_krBPN addPatternWeights:@[@0.2, @-0.3]]; //W15, W16
     [_krBPN addPatternWeights:@[@0.4, @0.1]];  //W25, W26
     [_krBPN addPatternWeights:@[@-0.5, @0.2]]; //W35, W36
     [_krBPN addPatternWeights:@[@-0.1, @0.3]]; //W45, W46
     
     //隱藏層神經元的偏權值 & 隱藏層神經元到輸出層神經元的權重值
+    //Add Hidden Layer biases of nets and the output weights in connect with output layer.
     [_krBPN addHiddenLayerNetBias:-0.4f outputWeights:@[@-0.3f, @0.2f]]; //Net 5 bias, W57, W58 to output layer
     [_krBPN addHiddenLayerNetBias:0.2f outputWeights:@[@-0.2f, @0.5f]];  //Net 6 bias, W67, W68 to output layer
     
-    //輸出層神經元偏權值, Net 7, 8 for output bias
+    //輸出層神經元偏權值, Net 7, 8
+    //Add the output layer biases
     [_krBPN addOutputBiases:@[@0.0f, @0.1f]];
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
@@ -65,12 +68,11 @@
     //[_krBPN trainingSave];
 }
 
+//Only setups patterns and output goals, and 1 output.
 -(void)useSample2
 {
-    //Only setups patterns and output goals, and 1 output.
-    
     [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f]]; //Pattern 1
-    [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoals:@[@0.1f]];   //Pattern 2
+    [_krBPN addPatterns:@[@0, @0.8, @0.3, @0.9] outputGoals:@[@0.1f]]; //Pattern 2
     [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.9f]]; //Pattern 3
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
@@ -89,7 +91,7 @@
             }];
             
             [_weakKrBPN recoverNetwork];
-            [_weakKrBPN directOutputAtInputs:@[@1, @0.1, @0.5, @0.2]];
+            [_weakKrBPN directOutputAtInputs:@[@0, @0.8, @0.3, @0.9]];
         }
     }];
     
@@ -97,10 +99,9 @@
     //[_krBPN trainingRandomAndSave];
 }
 
+//To learn and verify numbers 0 to 9. And only setups patterns and output goals, and 10 outputs.
 -(void)useSample3
 {
-    //To learn and verify numbers 0 to 9. And only setups patterns and output goals, and 10 outputs.
-    
     //1
     [_krBPN addPatterns:@[@0, @0, @0, @0,
                           @0, @0, @0, @0,
@@ -263,17 +264,17 @@
     //每一次的迭代( Every generation-training )
     [_krBPN setEachGeneration:^(NSInteger times, NSDictionary *trainedInfo){
         NSLog(@"Generation times : %i", times);
-        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedInfoOutputResults]);
+        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedOutputResults]);
     }];
     
     //Setup anything by yourself, and 2 outputs.
     //[self useSample1];
     
     //Only setup patterns and output goals, and 1 output.
-    //[self useSample2];
+    [self useSample2];
     
     //Only setup patterns and output goals, then learning to identify numbers 0 to 9.
-    [self useSample3];
+    //[self useSample3];
     
     //Remove your testing trained-network records.
     //[_krBPN removeNetwork];

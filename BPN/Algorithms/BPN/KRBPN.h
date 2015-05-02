@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V1.9 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V1.9.1 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -36,20 +36,30 @@ typedef void(^KRBPNEachGeneration)(NSInteger times, NSDictionary *trainedInfo);
 /*
  * @ 當前訓練的 BPN Network 數據資料
  *   - trainedInfo = @{};
- *      - KRBPNTrainedInfoInputWeights      : NSMutableArray, 調整後的輸入層各向量值到隱藏層神經元的權重
- *      - KRBPNTrainedInfoHiddenWeights     : NSMutableArray, 調整後的隱藏層神經元到輸出層神經元的權重值
- *      - KRBPNTrainedInfoHiddenBiases      : NSMutableArray, 調整後的隱藏層神經元的偏權值
- *      - KRBPNTrainedInfoOutputBiases      : NSMutableArray, 調整後的輸出層神經元偏權值
- *      - KRBPNTrainedInfoOutputResults     : NSArray,        輸出結果
- *      - KRBPNTrainedInfoTrainedGeneration : NSInteger,      已訓練到第幾代
+ *      - KRBPNTrainedInputWeights      : NSMutableArray, 調整後的輸入層各向量值到隱藏層神經元的權重
+ *      - KRBPNTrainedHiddenWeights     : NSMutableArray, 調整後的隱藏層神經元到輸出層神經元的權重值
+ *      - KRBPNTrainedHiddenBiases      : NSMutableArray, 調整後的隱藏層神經元的偏權值
+ *      - KRBPNTrainedOutputBiases      : NSMutableArray, 調整後的輸出層神經元偏權值
+ *      - KRBPNTrainedOutputResults     : NSArray,        輸出結果
+ *      - KRBPNTrainedGenerations       : NSInteger,      已訓練到第幾代
  *
  */
-static NSString *KRBPNTrainedInfoInputWeights      = @"KRBPNTrainedInfoInputWeights";
-static NSString *KRBPNTrainedInfoHiddenWeights     = @"KRBPNTrainedInfoHiddenWeights";
-static NSString *KRBPNTrainedInfoHiddenBiases      = @"KRBPNTrainedInfoHiddenBiases";
-static NSString *KRBPNTrainedInfoOutputBiases      = @"KRBPNTrainedInfoOutputBiases";
-static NSString *KRBPNTrainedInfoOutputResults     = @"KRBPNTrainedInfoOutputResults";
-static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGeneration";
+static NSString *KRBPNTrainedInputWeights   = @"KRBPNTrainedInputWeights";
+static NSString *KRBPNTrainedHiddenWeights  = @"KRBPNTrainedHiddenWeights";
+static NSString *KRBPNTrainedHiddenBiases   = @"KRBPNTrainedHiddenBiases";
+static NSString *KRBPNTrainedOutputBiases   = @"KRBPNTrainedOutputBiases";
+static NSString *KRBPNTrainedOutputResults  = @"KRBPNTrainedOutputResults";
+static NSString *KRBPNTrainedGenerations    = @"KRBPNTrainedGenerations";
+
+typedef enum KRBPNActivationFunctions
+{
+    //Sigmoid
+    KRBPNActivationFunctionSigmoid = 0,
+    //Tanh
+    KRBPNActivationFunctionTanh,
+    //Fuzzy, still not complete
+    KRBPNActivationFunctionFuzzy
+}KRBPNActivationFunctions;
 
 @protocol KRBPNDelegate;
 
@@ -92,6 +102,8 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 @property (nonatomic, strong) NSDictionary *trainedInfo;
 //取出儲存在 NSUserDefaults 裡訓練後的完整 BPN Network 數據資料
 @property (nonatomic, readwrite) KRBPNTrainedNetwork *trainedNetwork;
+//Use which f(x) the activiation function
+@property (nonatomic, assign) KRBPNActivationFunctions activationFunction;
 
 @property (nonatomic, copy) KRBPNTrainingCompletion trainingCompletion;
 @property (nonatomic, copy) KRBPNEachGeneration eachGeneration;
@@ -114,6 +126,7 @@ static NSString *KRBPNTrainedInfoTrainedGeneration = @"KRBPNTrainedInfoTrainedGe
 -(void)pause;
 -(void)continueTraining;
 -(void)reset;
+-(void)restart;
 -(void)directOutputAtInputs:(NSArray *)_rawInputs;
 
 #pragma --mark Trained Network Public Methods

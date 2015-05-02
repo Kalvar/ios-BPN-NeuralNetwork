@@ -1,14 +1,10 @@
 //
 //  KRBPN.m
-//  BPN V1.9
+//  BPN V1.9.1
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
-
-#import "KRBPN.h"
-#import "KRBPN+NSUserDefaults.h"
-
 /*
  * @ 2 種常用的 BPN 模式
  *
@@ -22,14 +18,17 @@
  *   - 將 BPN 做一改進，在輸入每一筆的訓練資料時，就「一邊調整權重與偏權值」，直到所有的訓練樣本( 例如 100 筆 )都訓練完後，
  *     才去判斷是否有達到收斂誤差的標準，如有，才停止網路訓練，如果沒有，就重新再代入 100 筆，跑遞迴重新運算一次。
  *
- * @ 使用的 f(x) 轉換函式為「雙彎曲函數」= 1 / ( 1 + e^-x )
- *   
+ * @ 常使用的 f(x) 轉換函式為「雙彎曲函數」= 1 / ( 1 + e^-x )
+ *
  *   - 所有值域都須格式化在 [0.0, 1.0] 之間
  *     - 輸入的值域
  *     - 輸出的值域
  *
- *
  */
+
+#import "KRBPN.h"
+#import "KRBPN+NSUserDefaults.h"
+
 static NSString *_kOriginalInputs           = @"_kOriginalInputs";
 static NSString *_kOriginalInputWeights     = @"_kOriginalInputWeights";
 static NSString *_kOriginalHiddenWeights    = @"_kOriginalHiddenWeights";
@@ -229,13 +228,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
      * @ Noted
      *   - rand() not fits to use here.
      *   - arc4random() fits here, it's the real random number.
+     *
+     * @ Samples
+     *   - srand((int)time(NULL));
+     *     double _random = ((double)rand() / RAND_MAX) * (_maxValue - _minValue) + _minValue;
+     *     RAND_MAX 是 0x7fffffff (2147483647)，而 arc4random() 返回的最大值则是 0x100000000 (4294967296)，
+     *     故 * 2.0f 待除，或使用自訂義 ARC4RANDOM_MAX      0x100000000
      */
-    //srand((int)time(NULL));
-    //double _random = ((double)rand() / RAND_MAX) * (_maxValue - _minValue) + _minValue;
-    //RAND_MAX 是 0x7fffffff (2147483647)，而 arc4random() 返回的最大值则是 0x100000000 (4294967296)，故 * 2.0f 待除，或使用自訂義 ARC4RANDOM_MAX      0x100000000
-    double _random = ((double)arc4random() / ( RAND_MAX * 2.0f ) ) * (_maxValue - _minValue) + _minValue;
-    //NSLog(@"_random : %lf", _random);
-    return _random;
+    return ((double)arc4random() / ( RAND_MAX * 2.0f ) ) * (_maxValue - _minValue) + _minValue;
 }
 
 @end
@@ -262,12 +262,38 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 
 /*
  * @ Fuzzy function
- *   - Waiting for next time for Fuzzy combined.
+ *   - Still waiting for implementing.
  */
 -(float)_fOfFuzzy:(float)_x
 {
     //Do Fuzzy ...
     return -0.1f;
+}
+
+-(float)_fOfX:(float)_x
+{
+    float _y = 0.0f;
+    switch (self.activationFunction)
+    {
+        case KRBPNActivationFunctionTanh:
+            _y = [self _fOfTanh:_x];
+            break;
+        case KRBPNActivationFunctionFuzzy:
+            _y = [self _fOfFuzzy:_x];
+            break;
+        case KRBPNActivationFunctionSigmoid:
+            _y = [self _fOfSigmoid:_x];
+        default:
+            break;
+    }
+    //isNaN ( not a number )
+    /*
+    if( _y != _y )
+    {
+        [self restart];
+    }
+     */
+    return _y;
 }
 
 @end
@@ -295,30 +321,12 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         ++_weightDimesion;
         //再以同維度做 SUM 方法
         float _sumOfNet = 0;
-        /*
-         * @ inputs = @[//X1
-         *              @[@1, @2, @-1],
-         *              //X2
-         *              @[@0, @1, @1],
-         *              //X3
-         *              @[@1, @1, @-2]];
-         */
         //有幾個 Input 就有幾個 Weight
         //取出每一個輸入值( Ex : X1 轉置矩陣後的輸入向量 [1, 2, -1] )
         int _inputIndex = -1;
         for( NSNumber *_xi in _inputs )
         {
             ++_inputIndex;
-            /*
-             * @ 輸入層各向量陣列(值)到隱藏層神經元的權重
-             *
-             *   inputWeights = @[//W14, W15
-             *                    @[@0.2, @-0.3],
-             *                    //W24, W25
-             *                    @[@0.4, @0.1],
-             *                    //W34, W35
-             *                    @[@-0.5, @0.2]];
-             */
             //取出每一個同維度的輸入層到隱藏層的權重
             NSArray *_everyWeights = [self.inputWeights objectAtIndex:_inputIndex];
             //將值與權重相乘後累加，例如 : SUM( w14 x 0.2 + w24 x 0.4 + w34 x -0.5 ), SUM( w15 x -0.3 + w25 x 0.1 + w35 x 0.2 ) ...
@@ -326,7 +334,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             _sumOfNet     += [_xi floatValue] * _weight;
             //NSLog(@"xValue : %f, _weight : %f", [_xi floatValue], _weight);
         }
-        //NSLog(@"\n\n\n");
         /*
          * @ 隱藏層神經元的偏權值
          *
@@ -338,9 +345,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
          */
         //減同維度的神經元偏權值
         _sumOfNet    -= [_partialWeight floatValue];
-        //代入活化函式 ( 用 1 除之，則預設限定範圍在 ~ 1.0 以下 ) 1 / 1 + e^(-alpha * sumOfNet)
-        float _fOfNet = [self _fOfSigmoid:_sumOfNet]; //[self _fOfTanh:_sumOfNet];
-        //加入計算好的輸入向量值，輸入向量是多少維度，輸出就多少維度，例如 : x1[1, 2, 3]，則 net(j) 就要為 [4, 5, 6] 同等維度
+        float _fOfNet = [self _fOfX:_sumOfNet];
         [_fOfNets addObject:[NSNumber numberWithFloat:_fOfNet]];
     }
     return ( [_fOfNets count] > 0 ) ? _fOfNets : nil;
@@ -370,7 +375,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
                 _sumOfNet               += [[_hideOutputs objectAtIndex:_netIndex] floatValue] * [_outputWeight floatValue];
             }
             _sumOfNet        += [_outputBias floatValue];
-            float _netOutput  = [self _fOfSigmoid:_sumOfNet]; //[self _fOfTanh:_sumOfNet];
+            float _netOutput  = [self _fOfX:_sumOfNet];
             [_fOfNets addObject:[NSNumber numberWithFloat:_netOutput]];
         }
     }
@@ -697,7 +702,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize isTraining          = _isTraining;
 @synthesize trainedInfo         = _trainedInfo;
 @synthesize trainedNetwork      = _trainedNetwork;
-
+@synthesize activationFunction  = _activationFunction;
 @synthesize trainingCompletion  = _trainingCompletion;
 @synthesize eachGeneration      = _eachGeneration;
 
@@ -746,6 +751,9 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [self._compareTargets addObjectsFromArray:_goals];
 }
 
+/*
+ * @ Each input data will match how many nets of hidden layer via setting the weights
+ */
 -(void)addPatternWeights:(NSArray *)_weights
 {
     [_inputWeights addObject:_weights]; //@[ @[W14, W15], @[W24, W25], @[W34, W35] ]
@@ -906,8 +914,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)pause
 {
-    _isTraining        = NO;
-    _forceStop = YES;
+    _isTraining = NO;
+    _forceStop  = YES;
 }
 
 /*
@@ -927,6 +935,13 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 {
     [self _resetTrainedParameters];
     [self _recoverOriginalParameters];
+}
+
+-(void)restart
+{
+    [self pause];
+    [self reset];
+    [self training];
 }
 
 /*
@@ -1032,7 +1047,6 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)recoverNetwork
 {
-    //[self recoverTrainedNetwork:_trainedNetwork];
     [self recoverNetwork:self.trainedNetwork];
 }
 
@@ -1066,12 +1080,12 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         _formatedOutputResults = nil;
     }
     
-    return @{KRBPNTrainedInfoInputWeights      : _inputWeights,
-             KRBPNTrainedInfoHiddenWeights     : _hiddenWeights,
-             KRBPNTrainedInfoHiddenBiases      : _hiddenBiases,
-             KRBPNTrainedInfoOutputBiases      : _outputBiases,
-             KRBPNTrainedInfoOutputResults     : _outputResults,
-             KRBPNTrainedInfoTrainedGeneration : [NSNumber numberWithInteger:_trainingGeneration]};
+    return @{KRBPNTrainedInputWeights      : _inputWeights,
+             KRBPNTrainedHiddenWeights     : _hiddenWeights,
+             KRBPNTrainedHiddenBiases      : _hiddenBiases,
+             KRBPNTrainedOutputBiases      : _outputBiases,
+             KRBPNTrainedOutputResults     : _outputResults,
+             KRBPNTrainedGenerations : [NSNumber numberWithInteger:_trainingGeneration]};
 }
 
 -(KRBPNTrainedNetwork *)trainedNetwork
