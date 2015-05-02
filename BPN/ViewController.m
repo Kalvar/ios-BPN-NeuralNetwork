@@ -256,7 +256,7 @@
     
     //學習速率
     _krBPN.learningRate     = 0.8f;
-    //收斂誤差值 ( 一般是 10^-3 或 10^-6 )
+    //收斂誤差值 ( Normally is 10^-3 or 10^-6 )
     _krBPN.convergenceError = 0.000001f;
     //限制迭代次數
     _krBPN.limitGeneration  = 5000;
@@ -271,10 +271,10 @@
     //[self useSample1];
     
     //Only setup patterns and output goals, and 1 output.
-    [self useSample2];
+    //[self useSample2];
     
     //Only setup patterns and output goals, then learning to identify numbers 0 to 9.
-    //[self useSample3];
+    [self useSample3];
     
     //Remove your testing trained-network records.
     //[_krBPN removeNetwork];
