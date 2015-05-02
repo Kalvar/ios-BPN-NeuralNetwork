@@ -1,13 +1,9 @@
 ios-BPN-Algorithm
 =================
 
-This neural network (NN) named Back Propagation Neural Networks (BPN) which used EBP algorithm to be the core design. This NN can use in the identification, recommendation, behavior analysis, data mining and data analysis (DA) especially DA is the better of application.
+Machine Learning (マシンラーニング) in this project, it implemented 3 layers ( Input Layer, Hidden Layer and Output Layer ) neural network (ニューラルネットワーク) and it named Back Propagation Neural Network (BPN).It is designed unlimited hidden layers to do the training tasks and also prepared flexible spaces to wait for combining Fuzzy theory in network. This network can be used in products recommendation (おすすめの商品), user behavior analysis (ユーザーの行動分析), data mining (データマイニング) and data analysis (データ分析).
 
-In the use sample, I used this network to identify numbers 0 to 9, it worked as well.
-
-This project designed for mobile device perform the basic data analysis, the performance waiting for enhancing, but, in current version could work as well. 1 generation only needs < 10 ms to training normally. 
-
-If you need to know how to use this network, but you don't find the suitable method to use, just ask me via email, let me help you.
+This project designed for quickly operation for mobile device perform the basic data analysis. If you need help to know how to use this network, just ask me via email.
 
 ``` objective-c
 #import "KRBPN.h"
