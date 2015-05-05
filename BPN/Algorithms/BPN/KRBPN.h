@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V1.9.1 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V1.9.2 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.

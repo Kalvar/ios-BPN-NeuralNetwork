@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BPN V1.9.1
+//  BPN V1.9.2
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -22,6 +22,8 @@
 //Setups any detail, and 2 outputs, you could set more outputs.
 -(void)useSample1
 {
+    _krBPN.activationFunction = KRBPNActivationFunctionSigmoid;
+    
     //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，因使用 S 形轉換函數，故 Input 值域須為 [0, 1]，輸出目標為 [0, 1]
     //Add the patterns, the weights connect with hidden layer, the output targets
     [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f, @0.8f]];  //Pattern 1
@@ -71,8 +73,10 @@
 //Only setups patterns and output goals, and 1 output.
 -(void)useSample2
 {
+    _krBPN.activationFunction = KRBPNActivationFunctionTanh;
+    
     [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f]]; //Pattern 1
-    [_krBPN addPatterns:@[@0, @0.8, @0.3, @0.9] outputGoals:@[@0.1f]]; //Pattern 2
+    [_krBPN addPatterns:@[@-0.5, @0.8, @-0.3, @0.9] outputGoals:@[@-0.1f]]; //Pattern 2
     [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.9f]]; //Pattern 3
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
@@ -91,7 +95,7 @@
             }];
             
             [_weakKrBPN recoverNetwork];
-            [_weakKrBPN directOutputAtInputs:@[@0, @0.8, @0.3, @0.9]];
+            [_weakKrBPN directOutputAtInputs:@[@-0.5, @0.8, @-0.3, @0.9]];
         }
     }];
     
@@ -102,6 +106,8 @@
 //To learn and verify numbers 0 to 9. And only setups patterns and output goals, and 10 outputs.
 -(void)useSample3
 {
+    _krBPN.activationFunction = KRBPNActivationFunctionSigmoid;
+    
     //1
     [_krBPN addPatterns:@[@0, @0, @0, @0,
                           @0, @0, @0, @0,
