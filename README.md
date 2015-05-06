@@ -5,6 +5,15 @@ Machine Learning (マシンラーニング) in this project, it implemented 3 la
 
 This project designed for quickly operation for mobile device perform the basic data analysis. If you need help to know how to use this network, just ask me via email.
 
+#### Podfile
+
+```ruby
+platform :ios, '7.0'
+pod "KRHebbian", "~> 1.0"
+```
+
+## How to use
+
 ``` objective-c
 #import "KRBPN.h"
 
