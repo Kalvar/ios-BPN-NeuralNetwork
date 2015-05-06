@@ -285,7 +285,7 @@ This project designed for quickly operation for mobile device perform the basic 
 
 ## Version
 
-V1.9.3
+V1.9.4
 
 ## License
 
