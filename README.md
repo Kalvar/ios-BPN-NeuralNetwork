@@ -9,7 +9,7 @@ This project designed for quickly operation for mobile device perform the basic 
 
 ```ruby
 platform :ios, '7.0'
-pod "KRHebbian", "~> 1.0"
+pod "KRBPN", "~> 1.9"
 ```
 
 ## How to use
