@@ -6,6 +6,8 @@
 //  Copyright (c) 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
 //
 
+#import <Foundation/Foundation.h>
+
 @interface KRBPNTrainedNetwork : NSObject <NSCoding>
 
 @property (nonatomic, strong) NSMutableArray *inputs;
