@@ -1,48 +1,31 @@
 //
 //  KRBPN.m
-//  BPN V1.9.2
+//  BPN V2.0
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
-/*
- * @ 2 種常用的 BPN 模式
- *
- *   - 1. 全部 100 筆都跑完後，總和全部誤差值，再一次回推調整權重與偏權值，這樣才算 1 個迭代。
- *   - 2. 一邊輸入就一邊調整權重與偏權值，一樣要跑完全部 100 筆後，才算 1 個迭代 ( EBP, 誤差導傳遞 )。
- *
- *   2 種都是在每 1 個迭代結束後，判斷 Output Error 是否有達到收斂，如未收斂，就繼續重頭運算，如收斂，就停止訓練 ( 流程參考 P.131 )。
- *
- * @ EBP ( 誤差導傳遞 ) 的流程
- *
- *   - 將 BPN 做一改進，在輸入每一筆的訓練資料時，就「一邊調整權重與偏權值」，直到所有的訓練樣本( 例如 100 筆 )都訓練完後，
- *     才去判斷是否有達到收斂誤差的標準，如有，才停止網路訓練，如果沒有，就重新再代入 100 筆，跑遞迴重新運算一次。
- *
- * @ 常使用的 f(x) 轉換函式為「雙彎曲函數」= 1 / ( 1 + e^-x )
- *
- *   - 所有值域都須格式化在 [0.0, 1.0] 之間
- *     - 輸入的值域
- *     - 輸出的值域
- *
- */
 
 #import "KRBPN.h"
-#import "KRBPN+NSUserDefaults.h"
 
-static NSString *_kOriginalInputs           = @"_kOriginalInputs";
-static NSString *_kOriginalInputWeights     = @"_kOriginalInputWeights";
-static NSString *_kOriginalHiddenWeights    = @"_kOriginalHiddenWeights";
-static NSString *_kOriginalHiddenBiases     = @"_kOriginalHiddenBiases";
-static NSString *_kOriginalOutputBiases     = @"_kOriginalOutputBiases";
-static NSString *_kOriginalOutputResults    = @"_kOriginalOutputResults";
-static NSString *_kOriginalOutputGoals      = @"_kOriginalOutputGoals";
-static NSString *_kOriginalLearningRate     = @"_kOriginalLearningRate";
-static NSString *_kOriginalConvergenceError = @"_kOriginalConvergenceError";
-static NSString *_kOriginalFOfAlpha         = @"_kOriginalFOfAlpha";
-static NSString *_kOriginalLimitGenerations = @"_kOriginalLimitGenerations";
+static NSString *_kOriginalInputs             = @"_kOriginalInputs";
+static NSString *_kOriginalInputWeights       = @"_kOriginalInputWeights";
+static NSString *_kOriginalHiddenWeights      = @"_kOriginalHiddenWeights";
+static NSString *_kOriginalHiddenBiases       = @"_kOriginalHiddenBiases";
+static NSString *_kOriginalOutputBiases       = @"_kOriginalOutputBiases";
+static NSString *_kOriginalOutputResults      = @"_kOriginalOutputResults";
+static NSString *_kOriginalOutputGoals        = @"_kOriginalOutputGoals";
+static NSString *_kOriginalLearningRate       = @"_kOriginalLearningRate";
+static NSString *_kOriginalConvergenceError   = @"_kOriginalConvergenceError";
+static NSString *_kOriginalFOfAlpha           = @"_kOriginalFOfAlpha";
+static NSString *_kOriginalLimitIterations    = @"_kOriginalLimitIterations";
+static NSString *_kOriginalActiveFunction     = @"_kOriginalActiveFunction";
+static NSString *_kOriginalLearningMode       = @"_kOriginalLearningMode";
+static NSString *_kOriginalEarlyStopping      = @"_kOriginalEarlyStopping";
+static NSString *_kOriginalQuickPropFixedRate = @"_kOriginalQuickPropFixedRate";
 //static NSString *_kOriginalMaxMultiple      = @"_kOriginalMaxMultiple";
 
-static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
+static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 
 @interface KRBPN ()
 
@@ -69,6 +52,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 //儲存每一個迭代的誤差總和
 //@property (nonatomic, strong) NSMutableArray *_iterationErrors;
 
+@property (nonatomic, strong) KRQuickProp *_krQuickProp;
+
 @end
 
 @implementation KRBPN (fixInitials)
@@ -78,7 +63,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     self.outputResults       = nil;
     
     self.trainedNetwork      = nil;
-    self.trainingGeneration  = 0;
+    self.presentIteration    = 0;
     
     self._hiddenOutputs      = nil;
     self._outputErrors       = nil;
@@ -100,12 +85,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     self.learningRate        = 0.8f;
     self.convergenceError    = 0.001f;
     self.fOfAlpha            = 1;
-    self.limitGeneration     = 0;
+    self.limitIteration      = 0;
     self.isTraining          = NO;
     self.trainedInfo         = nil;
     
     self.trainingCompletion  = nil;
-    self.eachGeneration      = nil;
+    self.eachIteration       = nil;
+    
+    self._krQuickProp        = [KRQuickProp sharedInstance];
     
     [self _resetTrainedParameters];
     
@@ -115,6 +102,12 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     self._compareTargets     = [NSMutableArray new];
     self._patternErrors      = [NSMutableArray new];
     //self._iterationErrors  = [NSMutableArray new];
+    
+    self.activeFunction      = KRBPNActivationBySigmoid;
+    self.learningMode        = KRBPNLearningModeByNormal;
+    self.earlyStopping       = KRBPNEarlyStoppingByMSE;
+    self.quickPropFixedRate  = 0.0f;
+    
 }
 
 @end
@@ -139,29 +132,29 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     {
         if( [self.delegate respondsToSelector:@selector(krBPNDidTrainFinished:trainedInfo:totalTimes:)] )
         {
-            [self.delegate krBpnDidTrainFinished:self trainedInfo:self.trainedInfo totalTimes:self.trainingGeneration];
+            [self.delegate krBpnDidTrainFinished:self trainedInfo:self.trainedInfo totalTimes:self.presentIteration];
         }
     }
     
     if( self.trainingCompletion )
     {
-        self.trainingCompletion(YES, self.trainedInfo, self.trainingGeneration);
+        self.trainingCompletion(YES, self.trainedInfo, self.presentIteration);
     }
 }
 
--(void)_printEachGeneration
+-(void)_printEachIteration
 {
     if( self.delegate )
     {
-        if( [self.delegate respondsToSelector:@selector(krBPNEachGeneration:trainedInfo:times:)] )
+        if( [self.delegate respondsToSelector:@selector(krBpnEachIteration:trainedInfo:times:)] )
         {
-            [self.delegate krBpnEachGeneration:self trainedInfo:self.trainedInfo times:self.trainingGeneration];
+            [self.delegate krBpnEachIteration:self trainedInfo:self.trainedInfo times:self.presentIteration];
         }
     }
     
-    if( self.eachGeneration )
+    if( self.eachIteration )
     {
-        self.eachGeneration(self.trainingGeneration, self.trainedInfo);
+        self.eachIteration(self.presentIteration, self.trainedInfo);
     }
 }
 
@@ -175,6 +168,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     {
         [self._originalParameters removeAllObjects];
     }
+    // Its memory references & links the _originalParameters.
     NSMutableDictionary *_originals = self._originalParameters;
     [_originals setObject:[self.inputs copy] forKey:_kOriginalInputs];
     [_originals setObject:[self.inputWeights copy] forKey:_kOriginalInputWeights];
@@ -185,7 +179,11 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [_originals setObject:[NSNumber numberWithFloat:self.learningRate] forKey:_kOriginalLearningRate];
     [_originals setObject:[NSNumber numberWithDouble:self.convergenceError] forKey:_kOriginalConvergenceError];
     [_originals setObject:[NSNumber numberWithFloat:self.fOfAlpha] forKey:_kOriginalFOfAlpha];
-    [_originals setObject:[NSNumber numberWithInteger:self.limitGeneration] forKey:_kOriginalLimitGenerations];
+    [_originals setObject:[NSNumber numberWithInteger:self.limitIteration] forKey:_kOriginalLimitIterations];
+    [_originals setObject:[NSNumber numberWithInt:self.activeFunction] forKey:_kOriginalActiveFunction];
+    [_originals setObject:[NSNumber numberWithInt:self.learningMode] forKey:_kOriginalLearningMode];
+    [_originals setObject:[NSNumber numberWithInt:self.earlyStopping] forKey:_kOriginalEarlyStopping];
+    [_originals setObject:[NSNumber numberWithFloat:self.quickPropFixedRate] forKey:_kOriginalQuickPropFixedRate];
     //[_originals setObject:[NSNumber numberWithInteger:self._maxMultiple] forKey:_kOriginalMaxMultiple];
 }
 
@@ -208,12 +206,17 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             [self.hiddenBiases removeAllObjects];
             [self.hiddenBiases addObjectsFromArray:[_originals objectForKey:_kOriginalHiddenBiases]];
             
-            self.outputBiases     = (NSMutableArray *)[_originals objectForKey:_kOriginalOutputBiases];
-            self.outputGoals      = (NSMutableArray *)[_originals objectForKey:_kOriginalOutputGoals];
-            self.learningRate     = [[_originals objectForKey:_kOriginalLearningRate] floatValue];
-            self.convergenceError = [[_originals objectForKey:_kOriginalConvergenceError] doubleValue];
-            self.fOfAlpha         = [[_originals objectForKey:_kOriginalFOfAlpha] floatValue];
-            self.limitGeneration  = [[_originals objectForKey:_kOriginalLimitGenerations] integerValue];
+            self.outputBiases       = (NSMutableArray *)[_originals objectForKey:_kOriginalOutputBiases];
+            self.outputGoals        = (NSMutableArray *)[_originals objectForKey:_kOriginalOutputGoals];
+            self.learningRate       = [[_originals objectForKey:_kOriginalLearningRate] floatValue];
+            self.convergenceError   = [[_originals objectForKey:_kOriginalConvergenceError] doubleValue];
+            self.fOfAlpha           = [[_originals objectForKey:_kOriginalFOfAlpha] floatValue];
+            self.limitIteration     = [[_originals objectForKey:_kOriginalLimitIterations] integerValue];
+            
+            self.activeFunction     = (KRBPNActiveFunctions)[[_originals objectForKey:_kOriginalActiveFunction] intValue];
+            self.learningMode       = (KRBPNLearningModes)[[_originals objectForKey:_kOriginalLearningMode] intValue];
+            self.earlyStopping      = (KRBPNEarlyStoppings)[[_originals objectForKey:_kOriginalEarlyStopping] intValue];
+            self.quickPropFixedRate = [[_originals objectForKey:_kOriginalQuickPropFixedRate] floatValue];
             
             //self._maxMultiple     = [[_originals objectForKey:_kOriginalMaxMultiple] integerValue];
         }
@@ -239,6 +242,30 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
      *     故 * 2.0f 待除，或使用自訂義 ARC4RANDOM_MAX      0x100000000
      */
     return ((double)arc4random() / ( RAND_MAX * 2.0f ) ) * (_maxValue - _minValue) + _minValue;
+}
+
+@end
+
+@implementation KRBPN (fixQuickProp)
+
+-(void)_addInputs:(NSArray *)_inputPatterns
+{
+    [self._krQuickProp addInputs:_inputPatterns];
+}
+
+-(void)_addInputDeltaWeights:(NSArray *)_weights
+{
+    [self._krQuickProp addInputDeltaWeights:_weights];
+}
+
+-(void)_addHiddenDeltaWeights:(NSArray *)_weights
+{
+    [self._krQuickProp addHiddenDeltaWeights:_weights];
+}
+
+-(BOOL)_isUsingQuickProp
+{
+    return ( self.learningMode != KRBPNLearningModeByNormal );
 }
 
 @end
@@ -275,15 +302,15 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(float)_fOfX:(float)_x
 {
     float _y = 0.0f;
-    switch (self.activationFunction)
+    switch (self.activeFunction)
     {
-        case KRBPNActivationFunctionTanh:
+        case KRBPNActivationByTanh:
             _y = [self _fOfTanh:_x];
             break;
-        case KRBPNActivationFunctionFuzzy:
+        case KRBPNActivationByFuzzy:
             _y = [self _fOfFuzzy:_x];
             break;
-        case KRBPNActivationFunctionSigmoid:
+        case KRBPNActivationBySigmoid:
             _y = [self _fOfSigmoid:_x];
         default:
             break;
@@ -406,10 +433,9 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             //計算與期望值的誤差
             float _errorValue  = _outputValue * ( 1 - _outputValue ) * ( _targetValue - _outputValue );
             [_errors addObject:[NSNumber numberWithFloat:_errorValue]];
-            
-            //儲存每一個 Pattern 的輸出誤差 (Tj - Yj) ^ 2
+            //儲存每一個 Pattern 的輸出誤差 (Tj - Yj)
             float _mseError    = _targetValue - _outputValue;
-            [self._patternErrors addObject:[NSNumber numberWithFloat:(_mseError * _mseError)]];
+            [self._patternErrors addObject:[NSNumber numberWithFloat:_mseError]];
         }
     }
     return _errors;
@@ -481,21 +507,43 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             //更新輪出層偏權值
             float _targetError             = [_outputError floatValue];
             float _outputBias              = [[self.outputBiases objectAtIndex:_outputIndex] floatValue];
-            _outputBias                   += ( self.learningRate * _targetError );
+            _outputBias                   += ( -self.learningRate * _targetError );
             [_updatedOutputBiases addObject:[NSNumber numberWithFloat:_outputBias]];
             
             //更新隱藏層到輸出層的所有權重
             NSMutableArray *_unsortWeights = [NSMutableArray new];
             int _netIndex                  = -1;
+            //取出指定神經元的所有權重值
             NSArray *_weights              = [self.hiddenWeights copy];
             for( NSArray *_netWeights in _weights )
             {
                 ++_netIndex;
+                //ex : W11, W21, W31
                 float _hiddenOutput  = [[self._hiddenOutputs objectAtIndex:_netIndex] floatValue];
                 float _weight        = [[_netWeights objectAtIndex:_outputIndex] floatValue];
-                _weight             += ( self.learningRate * _targetError * _hiddenOutput );
-                //原公式在精度上較差，故暫不採用 : learning rate * last error value * last output value
-                //float _weight      = self.learningRate * _targetError * _hiddenOutput;
+                float _deltaWeight   = ( self.learningRate * _targetError * _hiddenOutput );
+                
+                if( [self _isUsingQuickProp] )
+                {
+                    float _quickpropLearningRate = [self._krQuickProp calculateOutputLearningRateAtNetIndex:_netIndex
+                                                                                                outputIndex:_outputIndex
+                                                                                                targetError:_targetError
+                                                                                               hiddenOutput:_hiddenOutput];;
+                    float _lastDeltaWeight       = [self._krQuickProp getHiddenDeltaWeightAtNetIndex:_netIndex outputIndex:_outputIndex];
+                    
+                    //NSLog(@"_targetError : %f", _targetError);
+                    //NSLog(@"_quickpropLearningRate : %f", _quickpropLearningRate);
+                    //NSLog(@"_lastDeltaWeight : %f", _lastDeltaWeight);
+                    
+                    _deltaWeight += ( _quickpropLearningRate * _lastDeltaWeight );
+                    [self._krQuickProp saveHiddenDeltaWeightAtNetIndex:_netIndex outputIndex:_outputIndex deltaWeight:_deltaWeight];
+                    
+                    //NSLog(@"_deltaWeight : %f\n\n\n", _deltaWeight);
+                }
+                
+                // + Delta Weight (權重調整量)
+                _weight += _deltaWeight;
+                
                 //將連接到同一個 Output Net 的權重值作修正後的儲存，例如 : 連接到 Net8 的有 W58, W68, W78，都會放在同一維度陣列裡
                 [_unsortWeights addObject:[NSNumber numberWithFloat:_weight]];
             }
@@ -511,17 +559,16 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         //更新隱藏層神經元的偏權值
         for( NSNumber *_hiddenError in _hiddenErrors )
         {
-            //原使用公式，精度稍高，但迭代數大增
-            //float _netBias         = [[self.hiddenBiases objectAtIndex:_outputIndex] floatValue];
-            //float _renewHiddenBias = _netBias + ( self.learningRate * [_hiddenError floatValue] );
-            //原公式，能幫助提前收斂，精度可
-            float _renewHiddenBias   = -self.learningRate * [_hiddenError floatValue];
+            float _netBias         = [[self.hiddenBiases objectAtIndex:_outputIndex] floatValue];
+            // + Delta Bias (偏權值調整量)
+            float _renewHiddenBias = _netBias + ( -self.learningRate * [_hiddenError floatValue] );
             [_updatedHiddenBiases addObject:[NSNumber numberWithFloat:_renewHiddenBias]];
         }
         [self.hiddenBiases removeAllObjects];
         [self.hiddenBiases addObjectsFromArray:_updatedHiddenBiases];
         _updatedHiddenBiases = nil;
         
+        //將各個神經元的權重歸定位
         NSMutableArray *_sortedWeights = [NSMutableArray new];
         NSInteger _hiddenCount         = [self countHiddenNets];
         for( int _netIndex=0; _netIndex < _hiddenCount; _netIndex++ )
@@ -541,7 +588,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         
         //最後更新所有輸入層到隱藏層的權重
         NSArray *_weights = [self.inputWeights copy];
-        int _inputIndex = -1;
+        int _inputIndex   = -1;
         for( NSArray *_netWeights in _weights )
         {
             ++_inputIndex;
@@ -554,7 +601,25 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
                 float _netWeight   = [_everyWeight floatValue];
                 float _hiddenError = [[_hiddenErrors objectAtIndex:_weightIndex] floatValue];
                 float _inputValue  = [[[self.inputs objectAtIndex:self._patternIndex] objectAtIndex:_inputIndex] floatValue];
-                float _resetWeight = _netWeight + ( self.learningRate * _hiddenError * _inputValue );
+                float _resetWeight = 0.0f;
+                float _deltaWeight = ( self.learningRate * _hiddenError * _inputValue );
+                
+                if( [self _isUsingQuickProp] )
+                {
+                    float _quickpropLearningRate = [self._krQuickProp calculateInputLearningRateAtNetIndex:_inputIndex
+                                                                                               weightIndex:_weightIndex
+                                                                                               hiddenError:_hiddenError
+                                                                                                inputValue:_inputValue];
+                    float _lastDeltaWeight = [self._krQuickProp getInputDeltaWeightAtNetIndex:_inputIndex outputIndex:_weightIndex];
+                    _deltaWeight           +=( _quickpropLearningRate * _lastDeltaWeight );
+                    _resetWeight           = _netWeight + _deltaWeight;
+                    [self._krQuickProp saveInputDeltaWeightAtNetIndex:_inputIndex weightIndex:_weightIndex deltaWeight:_deltaWeight];
+                }
+                else
+                {
+                    _resetWeight = _netWeight + _deltaWeight;
+                }
+                
                 [_resetWeights addObject:[NSNumber numberWithFloat:_resetWeight]];
                 //NSLog(@"_new weight : %f = %f + ( %f * %f * %f )", _resetWeight, _netWeight, self.learningRate, _hiddenError, _inputValue);
             }
@@ -563,6 +628,16 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         }
         _weights           = nil;
         _onePatternTrained = YES;
+        
+        if( [self _isUsingQuickProp] )
+        {
+            [self._krQuickProp clean];
+            [self._krQuickProp addOutputErrors:self._outputErrors];
+            [self._krQuickProp addOutputResults:self.outputResults];
+            [self._krQuickProp addHiddenErrors:_hiddenErrors];
+            [self._krQuickProp addHiddenOutputs:self._hiddenOutputs];
+            [self._krQuickProp plus];
+        }
     }
     
     return _onePatternTrained;
@@ -589,14 +664,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     float _sumOutputError = 0.0f;
     for( NSNumber *_outpurError in self._patternErrors )
     {
-        //使用絕對值來做誤差比較
-        _sumOutputError += [_outpurError floatValue];
+        //使用絕對值來做誤差比較 error ^ 2
+        _sumOutputError += ( [_outpurError floatValue] * [_outpurError floatValue] );
     }
     
-    //MSE
-    _sumOutputError = _sumOutputError / ([self.inputs count] * [self.outputBiases count]);
-    //NSLog(@"mse sumOutputError : %f", _sumOutputError);
-    //NSLog(@"\n\n\n");
+    //MSE, 除以 (訓練範例數目 x 數出層神經元數目)
+    //_sumOutputError = _sumOutputError / ([self.inputs count] * [self.outputBiases count]);
+    _sumOutputError = _sumOutputError / [self._patternErrors count] * 0.5f;
+    
     //如果已達收斂誤差，就不再繼續訓練
     return ( _sumOutputError <= self.convergenceError );
 }
@@ -607,21 +682,20 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     float _sumOutputError = 0.0f;
     for( NSNumber *_outpurError in self._patternErrors )
     {
-        //使用絕對值來做誤差比較
-        _sumOutputError += [_outpurError floatValue];
+        //使用絕對值來做誤差比較 error ^ 2
+        _sumOutputError += ( [_outpurError floatValue] * [_outpurError floatValue] );
     }
     
-    //RMSE
-    _sumOutputError = sqrtf(_sumOutputError / ([self.inputs count] * [self.outputBiases count]));
-    //NSLog(@"rmse sumOutputError : %f", _sumOutputError);
-    //NSLog(@"\n\n\n");
+    //RMSE, 除以 (訓練範例數目 x 數出層神經元數目)
+    //_sumOutputError = sqrtf(_sumOutputError / ([self.inputs count] * [self.outputBiases count]));
+    _sumOutputError = sqrtf(_sumOutputError / [self._patternErrors count]);
     return ( _sumOutputError <= self.convergenceError );
 }
 
 -(void)_startTraining
 {
-    ++self.trainingGeneration;
-    self._patternIndex    = -1;
+    ++self.presentIteration;
+    self._patternIndex = -1;
     /*
      * @ 依公式所說，X(i) 輸入向量應做轉置矩陣運算，但轉置矩陣須耗去多餘效能，
      *   因此，這裡暫不採用直接先轉成轉置矩陣的動作，
@@ -634,10 +708,15 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
      *             [3]
      *     這為第 1 筆訓練資料，當成輸入層神經元代入，此時輸入層就有 3 顆神經元。
      */
-    //開始代入 X1, X2 ... Xn 各組的訓練資料
+    //開始代入每一個訓練範例 X1, X2 ... Xn 各組的訓練資料
     for( NSArray *_inputs in self.inputs )
     {
         ++self._patternIndex;
+        // Is using QuickProp ?
+        if( [self _isUsingQuickProp] )
+        {
+            [self._krQuickProp setUsingPatternIndex:self._patternIndex];
+        }
         /*
          * @ 每一筆輸入向量( 每組訓練的 Pattern )都會有自己的輸出期望值
          *   － 例如 : 
@@ -664,14 +743,14 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     }
     
     //如有指定迭代數 && 當前訓練迭代數 >= 指定迭代數
-    if( self.limitGeneration > 0 && self.trainingGeneration >= self.limitGeneration )
+    if( self.limitIteration > 0 && self.presentIteration >= self.limitIteration )
     {
         //停止訓練
         [self _completedTraining];
         return;
     }
     
-    BOOL _isDone = [self _mse];
+    BOOL _isDone = ( self.earlyStopping == KRBPNEarlyStoppingByMSE ) ? [self _mse] : [self _rmse];
     [self._patternErrors removeAllObjects];
     //檢查是否收斂
     if( _isDone )
@@ -683,7 +762,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     else
     {
         //全部數據都訓練完了，才為 1 迭代
-        [self _printEachGeneration];
+        [self _printEachIteration];
         //未達收斂誤差，則繼續執行訓練
         [self _startTraining];
     }
@@ -727,14 +806,17 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize learningRate        = _learningRate;
 @synthesize convergenceError    = _convergenceError;
 @synthesize fOfAlpha            = _fOfAlpha;
-@synthesize limitGeneration     = _limitGeneration;
-@synthesize trainingGeneration  = _trainingGeneration;
+@synthesize limitIteration     = _limitIteration;
+@synthesize presentIteration  = _presentIteration;
 @synthesize isTraining          = _isTraining;
 @synthesize trainedInfo         = _trainedInfo;
 @synthesize trainedNetwork      = _trainedNetwork;
-@synthesize activationFunction  = _activationFunction;
+@synthesize activeFunction      = _activeFunction;
 @synthesize trainingCompletion  = _trainingCompletion;
-@synthesize eachGeneration      = _eachGeneration;
+@synthesize eachIteration       = _eachIteration;
+@synthesize learningMode        = _learningMode;
+@synthesize earlyStopping       = _earlyStopping;
+@synthesize quickPropFixedRate  = _quickPropFixedRate;
 
 @synthesize _hiddenOutputs;
 @synthesize _goalValues;
@@ -747,6 +829,8 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 @synthesize _compareTargets;
 @synthesize _patternErrors;
 //@synthesize _iterationErrors;
+
+@synthesize _krQuickProp;
 
 +(instancetype)sharedNetwork
 {
@@ -780,6 +864,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [_inputs addObject:_patterns];
     [_outputGoals addObject:_goals]; //@[ @[1.0, 0.8, 0.2], @[0.76, 0.5, 0.89], ... ]
     [self._compareTargets addObjectsFromArray:_goals];
+    [self _addInputs:_patterns];
 }
 
 /*
@@ -788,6 +873,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(void)addPatternWeights:(NSArray *)_weights
 {
     [_inputWeights addObject:_weights]; //@[ @[W14, W15], @[W24, W25], @[W34, W35] ]
+    [self _addInputDeltaWeights:_weights];
 }
 
 /*
@@ -800,6 +886,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     [_hiddenBiases addObject:[NSNumber numberWithFloat:_netBias]];
     //@[ @[W57, W58, W59], @[W67, W68, W69], ... ]
     [_hiddenWeights addObject:_outputWeights];
+    [self _addHiddenDeltaWeights:_outputWeights];
 }
 
 /*
@@ -851,6 +938,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
                 [_toHiddenWeights addObject:[NSNumber numberWithDouble:[self _randomMax:_inputMax min:_inputMin]]];
             }
             [_inputWeights addObject:_toHiddenWeights];
+            [self _addInputDeltaWeights:_toHiddenWeights];
         }
     }
     
@@ -872,12 +960,13 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         //隱藏層神經元個數 x 輸出層神經元個數，就有幾條至輸出層神經元的權重值
         for( int i=0; i<_hiddenNetCount; i++ )
         {
-            NSMutableArray *_toOutputweights = [NSMutableArray new];
+            NSMutableArray *_toOutputWeights = [NSMutableArray new];
             for( int j=0; j<_outputNetCount; j++ )
             {
-                [_toOutputweights addObject:[NSNumber numberWithDouble:[self _randomMax:_hiddenMax min:_hiddenMin]]];
+                [_toOutputWeights addObject:[NSNumber numberWithDouble:[self _randomMax:_hiddenMax min:_hiddenMin]]];
             }
-            [_hiddenWeights addObject:_toOutputweights];
+            [_hiddenWeights addObject:_toOutputWeights];
+            [self _addHiddenDeltaWeights:_toOutputWeights];
         }
     }
     
@@ -994,11 +1083,11 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             [self _formatMaxMultiple];
             //將訓練迭代變為 1 次即終止
             //[self recoverTrainedNetwork];
-            _limitGeneration    = 1;
-            _trainingGeneration = _limitGeneration;
+            _limitIteration    = 1;
+            _presentIteration = _limitIteration;
             self._hiddenOutputs = [self _sumHiddenLayerOutputsFromInputs:_trainInputs];
             self.outputResults  = [self _sumOutputLayerNetsValue];
-            if( self.limitGeneration > 0 && self.trainingGeneration >= self.limitGeneration )
+            if( self.limitIteration > 0 && self.presentIteration >= self.limitIteration )
             {
                 [self _completedTraining];
                 return;
@@ -1016,19 +1105,7 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
  */
 -(void)saveNetwork
 {
-    KRBPNTrainedNetwork *_bpnNetwork = [[KRBPNTrainedNetwork alloc] init];
-    _bpnNetwork.inputs               = _inputs;
-    _bpnNetwork.inputWeights         = _inputWeights;
-    _bpnNetwork.hiddenWeights        = _hiddenWeights;
-    _bpnNetwork.hiddenBiases         = _hiddenBiases;
-    _bpnNetwork.outputBiases         = _outputBiases;
-    _bpnNetwork.outputResults        = _outputResults;
-    _bpnNetwork.outputGoals          = _outputGoals;
-    _bpnNetwork.learningRate         = _learningRate;
-    _bpnNetwork.convergenceError     = _convergenceError;
-    _bpnNetwork.fOfAlpha             = _fOfAlpha;
-    _bpnNetwork.limitGeneration      = _limitGeneration;
-    _bpnNetwork.trainingGeneration   = _trainingGeneration;
+    KRBPNTrainedNetwork *_bpnNetwork = [self copy];
     [self removeNetwork];
     _trainedNetwork                  = _bpnNetwork;
     [NSUserDefaults saveTrainedNetwork:_bpnNetwork forKey:_kTrainedNetworkInfo];
@@ -1063,8 +1140,18 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
             _learningRate       = _recoverNetwork.learningRate;
             _convergenceError   = _recoverNetwork.convergenceError;
             _fOfAlpha           = _recoverNetwork.fOfAlpha;
-            _limitGeneration    = _recoverNetwork.limitGeneration;
-            _trainingGeneration = _recoverNetwork.trainingGeneration;
+            _limitIteration     = _recoverNetwork.limitIteration;
+            _presentIteration   = _recoverNetwork.presentIteration;
+            _activeFunction     = _recoverNetwork.activeFunction;
+            _learningMode       = _recoverNetwork.learningMode;
+            _earlyStopping      = _recoverNetwork.earlyStopping;
+            _krQuickProp        = _recoverNetwork.quickProp;
+            if( _krQuickProp != nil &&
+                _krQuickProp.inputLearningMode  == KRQuickPropLearningModeByInputFixed &&
+                _krQuickProp.outputLearningMode == KRQuickPropLearningModeByInputFixed )
+            {
+                _quickPropFixedRate = _krQuickProp.inputLearningRate;
+            }
             [self removeNetwork];
             _trainedNetwork     = _recoverNetwork;
             [NSUserDefaults saveTrainedNetwork:_trainedNetwork forKey:_kTrainedNetworkInfo];
@@ -1087,9 +1174,9 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
     _trainingCompletion = _theBlock;
 }
 
--(void)setEachGeneration:(KRBPNEachGeneration)_theBlock
+-(void)setEachIteration:(KRBPNIteration)_theBlock
 {
-    _eachGeneration     = _theBlock;
+    _eachIteration      = _theBlock;
 }
 
 #pragma --mark Getters
@@ -1111,12 +1198,12 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
         _formatedOutputResults = nil;
     }
     
-    return @{KRBPNTrainedInputWeights      : _inputWeights,
-             KRBPNTrainedHiddenWeights     : _hiddenWeights,
-             KRBPNTrainedHiddenBiases      : _hiddenBiases,
-             KRBPNTrainedOutputBiases      : _outputBiases,
-             KRBPNTrainedOutputResults     : _outputResults,
-             KRBPNTrainedGenerations : [NSNumber numberWithInteger:_trainingGeneration]};
+    return @{KRBPNTrainedInputWeights  : _inputWeights,
+             KRBPNTrainedHiddenWeights : _hiddenWeights,
+             KRBPNTrainedHiddenBiases  : _hiddenBiases,
+             KRBPNTrainedOutputBiases  : _outputBiases,
+             KRBPNTrainedOutputResults : _outputResults,
+             KRBPNTrainedIterations    : [NSNumber numberWithInteger:_presentIteration]};
 }
 
 -(KRBPNTrainedNetwork *)trainedNetwork
@@ -1135,6 +1222,50 @@ static NSString *_kTrainedNetworkInfo       = @"kTrainedNetworkInfo";
 -(NSInteger)countHiddenNets
 {
     return [_hiddenBiases count];
+}
+
+#pragma --mark Setters
+-(void)setLearningMode:(KRBPNLearningModes)_mode
+{
+    _learningMode = _mode;
+    if(_learningMode != KRBPNLearningModeByNormal)
+    {
+        if( _krQuickProp == nil )
+        {
+            _krQuickProp = [KRQuickProp sharedInstance];
+        }
+        
+        switch (_mode)
+        {
+            case KRBPNLearningModeByQuickPropSmartHybrid:
+                [_krQuickProp setInputFixedRateByRandom];
+                _krQuickProp.outputLearningMode = KRQuickPropLearningModeByOutputDynamic;
+                break;
+            case KRBPNLearningModeByQuickPropFixed:
+                [_krQuickProp setBothFixedRateByRandom];
+                break;
+            case KRBPNLearningModeByQuickPropDynamic:
+                // ...
+                break;
+            case KRBPNLearningModeByQuickPropCustomFixed:
+                [_krQuickProp setBothFixedRate:_quickPropFixedRate];
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+-(void)setQuickPropFixedRate:(float)_fixedRate
+{
+    if(_fixedRate > 0.0f)
+    {
+        _quickPropFixedRate = _fixedRate;
+        if( _krQuickProp != nil )
+        {
+            [self setLearningMode:KRBPNLearningModeByQuickPropCustomFixed];
+        }
+    }
 }
 
 @end

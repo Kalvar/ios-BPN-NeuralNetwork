@@ -1,7 +1,7 @@
 ios-BPN-NeuralNetwork
 =================
 
-Machine Learning (マシンラーニング) in this project, it implemented 3 layers ( Input Layer, Hidden Layer and Output Layer ) neural network (ニューラルネットワーク) and it named Back Propagation Neural Network (BPN). This network can be used in products recommendation (おすすめの商品), user behavior analysis (ユーザーの行動分析), data mining (データマイニング) and data analysis (データ分析).
+Machine Learning (マシンラーニング) in this project, it implemented 3 layers ( Input Layer, Hidden Layer and Output Layer ) neural network (ニューラルネットワーク) and it named Back Propagation Neural Network (BPN). This version implemented QuickProp theory and Kecman's theory. KRBPN can be used in products recommendation (おすすめの商品), user behavior analysis (ユーザーの行動分析), data mining (データマイニング) and data analysis (データ分析).
 
 This project designed for quickly operation for mobile device perform the basic data analysis. If you need help to know how to use this network, just ask me via email.
 
@@ -9,7 +9,7 @@ This project designed for quickly operation for mobile device perform the basic 
 
 ```ruby
 platform :ios, '7.0'
-pod "KRBPN", "~> 1.9"
+pod "KRBPN", "~> 2.0"
 ```
 
 ## How to use
@@ -261,40 +261,99 @@ pod "KRBPN", "~> 1.9"
     //[_krBPN trainingRandomAndSave];
 }
 
+//Medical prediction of cancer, 醫療癌症預測
+-(void)useSample4
+{
+    _krBPN.activeFunction = KRBPNActivationBySigmoid;
+    
+    // ER, PR, Hev-2, K, 治療與否, 每 10 年為 0.1 單位 => 存活率
+    [_krBPN addPatterns:@[@0.9, @0.9, @0.0, @0.15, @0, @0.1f] outputGoals:@[@0.12f]];
+    [_krBPN addPatterns:@[@0.9, @0.9, @0.0, @0.15, @1, @0.1f] outputGoals:@[@0.12f]];
+    
+    [_krBPN addPatterns:@[@0.5, @0.4, @0.0, @0.25, @0, @0.1f] outputGoals:@[@0.23f]];
+    [_krBPN addPatterns:@[@0.5, @0.4, @0.0, @0.25, @1, @0.1f] outputGoals:@[@0.14f]];
+    
+    [_krBPN addPatterns:@[@0.0, @0.0, @0.0, @0.3, @0, @0.1f] outputGoals:@[@0.35f]];
+    [_krBPN addPatterns:@[@0.0, @0.0, @0.0, @0.3, @1, @0.1f] outputGoals:@[@0.22f]];
+    
+    [_krBPN addPatterns:@[@0.0, @0.0, @1.0, @0.3, @0, @0.1f] outputGoals:@[@0.3f]];
+    [_krBPN addPatterns:@[@0.0, @0.0, @1.0, @0.3, @1, @0.1f] outputGoals:@[@0.12f]];
+    
+    __block typeof(_krBPN) _weakKrBPN = _krBPN;
+    //訓練完成時( Training complete )
+    [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
+        if( success )
+        {
+            NSLog(@"Training done with total times : %i", totalTimes);
+            NSLog(@"TrainedInfo 1 : %@", trainedInfo);
+            
+            //Start in checking the network is correctly trained.
+            NSLog(@"======== Start in Verification ========");
+            [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
+                NSLog(@"Training done with total times : %i", totalTimes);
+                NSLog(@"TrainedInfo 2 : %@", trainedInfo);
+            }];
+            
+            [_weakKrBPN recoverNetwork];
+            // To predict how many years could be alive with the patients.
+            [_weakKrBPN directOutputAtInputs:@[@0.6, @0.6, @0.0, @0.25, @0.0, @0.1f]];
+            [_weakKrBPN directOutputAtInputs:@[@0.6, @0.6, @0.0, @0.25, @1.0, @0.1f]];
+        }
+    }];
+    
+    [_krBPN trainingRandom];
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     
     _krBPN = [KRBPN sharedNetwork];
+    //_krBPN.delegate = self;
     
-    //學習速率
+    // Learning rate
     _krBPN.learningRate     = 0.8f;
-    //收斂誤差值 ( Normally is 10^-3 or 10^-6 )
-    _krBPN.convergenceError = 0.000001f;
-    //限制迭代次數
-    _krBPN.limitGeneration  = 5000;
+    // Convergence error, 收斂誤差值 ( Normally is 10^-3 or 10^-6 )
+    _krBPN.convergenceError = 0.001f;
+    // To limit that iterations
+    _krBPN.limitIteration  = 1000;
     
-    //每一次的迭代( Every generation-training )
-    [_krBPN setEachGeneration:^(NSInteger times, NSDictionary *trainedInfo){
+    // If you wanna use enhanced theory, and to setup that customized learning rate, you could use this as below :
+    //_krBPN.quickPropFixedRate = 0.5f;
+    
+    // If you wanna directly use QuickProp method to enhance that network training :
+    //_krBPN.learningMode = KRBPNLearningModeByQuickPropDynamic;
+    
+    // If you wanna use Kecman's theory to enhance that network training, please use this :
+    //_krBPN.learningMode = KRBPNLearningModeByQuickPropFixed;
+    
+    // If you wanna use Fahlman's QuickProp combined Kecman's Fixed Rate. Yes, in my experiences this usage method is better than others.
+    _krBPN.learningMode = KRBPNLearningModeByQuickPropSmartHybrid;
+    
+    // 每一次的迭代( Per iteration-training )
+    [_krBPN setEachIteration:^(NSInteger times, NSDictionary *trainedInfo){
         NSLog(@"Generation times : %i", times);
-        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedInfoOutputResults]);
+        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedOutputResults]);
     }];
     
-    //Setup anything by yourself, and 2 outputs.
-    [self useSample1];
-
-    //Only setup patterns and output goals, and 1 output.
-    [self useSample2];
-
-    //Only setup patterns and output goals, then learning to identify numbers 0 to 9.
+    // Setup anything by yourself, and 2 outputs.
+    //[self useSample1];
+    
+    // Only setup patterns and output goals, and 1 output.
+    //[self useSample2];
+    
+    // Only setup patterns and output goals, then learning to identify numbers 0 to 9.
     [self useSample3];
+    
+    // Medical prediction of cancer
+    //[self useSample4];
 
 }
 ```
 
 ## Version
 
-V1.9.4
+V2.0
 
 ## License
 

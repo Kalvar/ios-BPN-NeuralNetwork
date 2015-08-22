@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V1.9.2 ( 倒傳遞類神經網路 ; 本方法使用其中的 EBP 誤差導傳遞類神經網路建構 )
+//  BPN V2.0
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -31,42 +31,11 @@ typedef void(^KRBPNTrainingCompletion)(BOOL success, NSDictionary *trainedInfo, 
  *   - times       : 訓練到了第幾代
  *   - trainedInfo : 本次訓練的 Network 資料
  */
-typedef void(^KRBPNEachGeneration)(NSInteger times, NSDictionary *trainedInfo);
-
-/*
- * @ 當前訓練的 BPN Network 數據資料
- *   - trainedInfo = @{};
- *      - KRBPNTrainedInputWeights      : NSMutableArray, 調整後的輸入層各向量值到隱藏層神經元的權重
- *      - KRBPNTrainedHiddenWeights     : NSMutableArray, 調整後的隱藏層神經元到輸出層神經元的權重值
- *      - KRBPNTrainedHiddenBiases      : NSMutableArray, 調整後的隱藏層神經元的偏權值
- *      - KRBPNTrainedOutputBiases      : NSMutableArray, 調整後的輸出層神經元偏權值
- *      - KRBPNTrainedOutputResults     : NSArray,        輸出結果
- *      - KRBPNTrainedGenerations       : NSInteger,      已訓練到第幾代
- *
- */
-static NSString *KRBPNTrainedInputWeights   = @"KRBPNTrainedInputWeights";
-static NSString *KRBPNTrainedHiddenWeights  = @"KRBPNTrainedHiddenWeights";
-static NSString *KRBPNTrainedHiddenBiases   = @"KRBPNTrainedHiddenBiases";
-static NSString *KRBPNTrainedOutputBiases   = @"KRBPNTrainedOutputBiases";
-static NSString *KRBPNTrainedOutputResults  = @"KRBPNTrainedOutputResults";
-static NSString *KRBPNTrainedGenerations    = @"KRBPNTrainedGenerations";
-
-typedef enum KRBPNActivationFunctions
-{
-    //Sigmoid
-    KRBPNActivationFunctionSigmoid = 0,
-    //Tanh
-    KRBPNActivationFunctionTanh,
-    //Fuzzy, still not complete
-    KRBPNActivationFunctionFuzzy
-}KRBPNActivationFunctions;
+typedef void(^KRBPNIteration)(NSInteger times, NSDictionary *trainedInfo);
 
 @protocol KRBPNDelegate;
 
 @interface KRBPN : NSObject
-{
-    
-}
 
 //Setup attribute is strong that 'coz we want to keep the delegate when the training run in the other queue.
 @property (nonatomic, strong) id<KRBPNDelegate> delegate;
@@ -88,14 +57,14 @@ typedef enum KRBPNActivationFunctions
 @property (nonatomic, strong) NSMutableArray *outputGoals;
 //學習速率
 @property (nonatomic, assign) CGFloat learningRate;
-//收斂誤差值 ( 10^-3, 10^-6 )
+//收斂誤差值 ( Normally between 10^-3 and 10^-6 )
 @property (nonatomic, assign) double convergenceError;
 //活化函式的 Alpha Value ( LMS 的坡度 )
 @property (nonatomic, assign) float fOfAlpha;
 //訓練迭代次數上限
-@property (nonatomic, assign) NSInteger limitGeneration;
+@property (nonatomic, assign) NSInteger limitIteration;
 //目前訓練到第幾代
-@property (nonatomic, assign) NSInteger trainingGeneration;
+@property (nonatomic, assign) NSInteger presentIteration;
 //是否正在訓練中
 @property (nonatomic, assign) BOOL isTraining;
 //當前訓練後的資料
@@ -103,10 +72,17 @@ typedef enum KRBPNActivationFunctions
 //取出儲存在 NSUserDefaults 裡訓練後的完整 BPN Network 數據資料
 @property (nonatomic, readwrite) KRBPNTrainedNetwork *trainedNetwork;
 //Use which f(x) the activiation function
-@property (nonatomic, assign) KRBPNActivationFunctions activationFunction;
+@property (nonatomic, assign) KRBPNActiveFunctions activeFunction;
 
 @property (nonatomic, copy) KRBPNTrainingCompletion trainingCompletion;
-@property (nonatomic, copy) KRBPNEachGeneration eachGeneration;
+@property (nonatomic, copy) KRBPNIteration eachIteration;
+
+//學習模式
+@property (nonatomic, assign) KRBPNLearningModes learningMode;
+//判斷何時該停止的誤差函式
+@property (nonatomic, assign) KRBPNEarlyStoppings earlyStopping;
+//QuickProp 固定學習速率, It must > 0.0f
+@property (nonatomic, assign) float quickPropFixedRate;
 
 +(instancetype)sharedNetwork;
 -(instancetype)init;
@@ -137,14 +113,14 @@ typedef enum KRBPNActivationFunctions
 
 #pragma --mark Blocks
 -(void)setTrainingCompletion:(KRBPNTrainingCompletion)_theBlock;
--(void)setEachGeneration:(KRBPNEachGeneration)_theBlock;
+-(void)setEachIteration:(KRBPNIteration)_theBlock;
 
 @end
 
 @protocol KRBPNDelegate <NSObject>
 
 @optional
--(void)krBpnDidTrainFinished:(KRBPN *)krBPN trainedInfo:(NSDictionary *)trainedInfo totalTimes:(NSInteger)totalTimes;
--(void)krBpnEachGeneration:(KRBPN*)krBPN trainedInfo:(NSDictionary *)trainedInfo times:(NSInteger)times;
+-(void)krBpnDidTrainFinished:(KRBPN *)network trainedInfo:(NSDictionary *)trainedInfo totalTimes:(NSInteger)totalTimes;
+-(void)krBpnEachIteration:(KRBPN*)network trainedInfo:(NSDictionary *)trainedInfo times:(NSInteger)times;
 
 @end

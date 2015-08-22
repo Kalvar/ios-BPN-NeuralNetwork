@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		8E04D59B192DAD520093D31C /* KRBPN+NSUserDefaults.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E04D59A192DAD520093D31C /* KRBPN+NSUserDefaults.m */; };
-		8E04D59F192DC04C0093D31C /* KRBPNTrainedNetwork.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E04D59E192DC04C0093D31C /* KRBPNTrainedNetwork.m */; };
 		8E720438177DB7AA00B5DDC2 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E720437177DB7AA00B5DDC2 /* UIKit.framework */; };
 		8E72043A177DB7AA00B5DDC2 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E720439177DB7AA00B5DDC2 /* Foundation.framework */; };
 		8E72043C177DB7AA00B5DDC2 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E72043B177DB7AA00B5DDC2 /* CoreGraphics.framework */; };
@@ -20,14 +18,13 @@
 		8E72044E177DB7AA00B5DDC2 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E72044D177DB7AA00B5DDC2 /* Default-568h@2x.png */; };
 		8E720451177DB7AA00B5DDC2 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E720450177DB7AA00B5DDC2 /* ViewController.m */; };
 		8E720454177DB7AA00B5DDC2 /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 8E720452177DB7AA00B5DDC2 /* ViewController.xib */; };
-		8E72045E177DB80600B5DDC2 /* KRBPN.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E72045D177DB80600B5DDC2 /* KRBPN.m */; };
+		8EA2338E1B88D45B007F03E2 /* KRBPN+NSUserDefaults.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EA233861B88D45B007F03E2 /* KRBPN+NSUserDefaults.m */; };
+		8EA2338F1B88D45B007F03E2 /* KRBPNTrainedNetwork.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EA233891B88D45B007F03E2 /* KRBPNTrainedNetwork.m */; };
+		8EA233901B88D45B007F03E2 /* KRBPN.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EA2338B1B88D45B007F03E2 /* KRBPN.m */; };
+		8EA233911B88D45B007F03E2 /* KRQuickProp.m in Sources */ = {isa = PBXBuildFile; fileRef = 8EA2338D1B88D45B007F03E2 /* KRQuickProp.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		8E04D599192DAD520093D31C /* KRBPN+NSUserDefaults.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "KRBPN+NSUserDefaults.h"; sourceTree = "<group>"; };
-		8E04D59A192DAD520093D31C /* KRBPN+NSUserDefaults.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "KRBPN+NSUserDefaults.m"; sourceTree = "<group>"; };
-		8E04D59D192DC04C0093D31C /* KRBPNTrainedNetwork.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KRBPNTrainedNetwork.h; sourceTree = "<group>"; };
-		8E04D59E192DC04C0093D31C /* KRBPNTrainedNetwork.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KRBPNTrainedNetwork.m; sourceTree = "<group>"; };
 		8E720434177DB7AA00B5DDC2 /* BPN.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BPN.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8E720437177DB7AA00B5DDC2 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		8E720439177DB7AA00B5DDC2 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -44,8 +41,15 @@
 		8E72044F177DB7AA00B5DDC2 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		8E720450177DB7AA00B5DDC2 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		8E720453177DB7AA00B5DDC2 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/ViewController.xib; sourceTree = "<group>"; };
-		8E72045C177DB80600B5DDC2 /* KRBPN.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KRBPN.h; sourceTree = "<group>"; };
-		8E72045D177DB80600B5DDC2 /* KRBPN.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KRBPN.m; sourceTree = "<group>"; };
+		8EA233831B88D45B007F03E2 /* KRBPN+Definition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "KRBPN+Definition.h"; sourceTree = "<group>"; };
+		8EA233851B88D45B007F03E2 /* KRBPN+NSUserDefaults.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "KRBPN+NSUserDefaults.h"; sourceTree = "<group>"; };
+		8EA233861B88D45B007F03E2 /* KRBPN+NSUserDefaults.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "KRBPN+NSUserDefaults.m"; sourceTree = "<group>"; };
+		8EA233881B88D45B007F03E2 /* KRBPNTrainedNetwork.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KRBPNTrainedNetwork.h; sourceTree = "<group>"; };
+		8EA233891B88D45B007F03E2 /* KRBPNTrainedNetwork.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KRBPNTrainedNetwork.m; sourceTree = "<group>"; };
+		8EA2338A1B88D45B007F03E2 /* KRBPN.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KRBPN.h; sourceTree = "<group>"; };
+		8EA2338B1B88D45B007F03E2 /* KRBPN.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KRBPN.m; sourceTree = "<group>"; };
+		8EA2338C1B88D45B007F03E2 /* KRQuickProp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KRQuickProp.h; sourceTree = "<group>"; };
+		8EA2338D1B88D45B007F03E2 /* KRQuickProp.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KRQuickProp.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,28 +66,10 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		8E04D598192DAD430093D31C /* KRBPN+NSUserDefaults */ = {
-			isa = PBXGroup;
-			children = (
-				8E04D599192DAD520093D31C /* KRBPN+NSUserDefaults.h */,
-				8E04D59A192DAD520093D31C /* KRBPN+NSUserDefaults.m */,
-			);
-			path = "KRBPN+NSUserDefaults";
-			sourceTree = "<group>";
-		};
-		8E04D59C192DC0030093D31C /* KRBPN+TrainedNetwork */ = {
-			isa = PBXGroup;
-			children = (
-				8E04D59D192DC04C0093D31C /* KRBPNTrainedNetwork.h */,
-				8E04D59E192DC04C0093D31C /* KRBPNTrainedNetwork.m */,
-			);
-			path = "KRBPN+TrainedNetwork";
-			sourceTree = "<group>";
-		};
 		8E72042B177DB7AA00B5DDC2 = {
 			isa = PBXGroup;
 			children = (
-				8E72045A177DB7EB00B5DDC2 /* Algorithms */,
+				8EA233811B88D45B007F03E2 /* ML */,
 				8E72043D177DB7AA00B5DDC2 /* BPN */,
 				8E72043E177DB7AA00B5DDC2 /* Supporting Files */,
 				8E720436177DB7AA00B5DDC2 /* Frameworks */,
@@ -136,24 +122,44 @@
 			path = BPN;
 			sourceTree = "<group>";
 		};
-		8E72045A177DB7EB00B5DDC2 /* Algorithms */ = {
+		8EA233811B88D45B007F03E2 /* ML */ = {
 			isa = PBXGroup;
 			children = (
-				8E72045B177DB7EB00B5DDC2 /* BPN */,
+				8EA233821B88D45B007F03E2 /* KRBPN+Definition */,
+				8EA233841B88D45B007F03E2 /* KRBPN+NSUserDefaults */,
+				8EA233871B88D45B007F03E2 /* KRBPN+TrainedNetwork */,
+				8EA2338A1B88D45B007F03E2 /* KRBPN.h */,
+				8EA2338B1B88D45B007F03E2 /* KRBPN.m */,
+				8EA2338C1B88D45B007F03E2 /* KRQuickProp.h */,
+				8EA2338D1B88D45B007F03E2 /* KRQuickProp.m */,
 			);
-			name = Algorithms;
-			path = BPN/Algorithms;
+			path = ML;
 			sourceTree = "<group>";
 		};
-		8E72045B177DB7EB00B5DDC2 /* BPN */ = {
+		8EA233821B88D45B007F03E2 /* KRBPN+Definition */ = {
 			isa = PBXGroup;
 			children = (
-				8E04D59C192DC0030093D31C /* KRBPN+TrainedNetwork */,
-				8E04D598192DAD430093D31C /* KRBPN+NSUserDefaults */,
-				8E72045C177DB80600B5DDC2 /* KRBPN.h */,
-				8E72045D177DB80600B5DDC2 /* KRBPN.m */,
+				8EA233831B88D45B007F03E2 /* KRBPN+Definition.h */,
 			);
-			path = BPN;
+			path = "KRBPN+Definition";
+			sourceTree = "<group>";
+		};
+		8EA233841B88D45B007F03E2 /* KRBPN+NSUserDefaults */ = {
+			isa = PBXGroup;
+			children = (
+				8EA233851B88D45B007F03E2 /* KRBPN+NSUserDefaults.h */,
+				8EA233861B88D45B007F03E2 /* KRBPN+NSUserDefaults.m */,
+			);
+			path = "KRBPN+NSUserDefaults";
+			sourceTree = "<group>";
+		};
+		8EA233871B88D45B007F03E2 /* KRBPN+TrainedNetwork */ = {
+			isa = PBXGroup;
+			children = (
+				8EA233881B88D45B007F03E2 /* KRBPNTrainedNetwork.h */,
+				8EA233891B88D45B007F03E2 /* KRBPNTrainedNetwork.m */,
+			);
+			path = "KRBPN+TrainedNetwork";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -232,12 +238,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8E04D59F192DC04C0093D31C /* KRBPNTrainedNetwork.m in Sources */,
-				8E04D59B192DAD520093D31C /* KRBPN+NSUserDefaults.m in Sources */,
+				8EA233911B88D45B007F03E2 /* KRQuickProp.m in Sources */,
+				8EA2338F1B88D45B007F03E2 /* KRBPNTrainedNetwork.m in Sources */,
 				8E720444177DB7AA00B5DDC2 /* main.m in Sources */,
+				8EA2338E1B88D45B007F03E2 /* KRBPN+NSUserDefaults.m in Sources */,
+				8EA233901B88D45B007F03E2 /* KRBPN.m in Sources */,
 				8E720448177DB7AA00B5DDC2 /* AppDelegate.m in Sources */,
 				8E720451177DB7AA00B5DDC2 /* ViewController.m in Sources */,
-				8E72045E177DB80600B5DDC2 /* KRBPN.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

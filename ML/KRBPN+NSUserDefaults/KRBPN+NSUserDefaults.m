@@ -1,6 +1,6 @@
 //
 //  KRBPN+NSUserDefaults.m
-//  BPN V1.9.2
+//  BPN V2.0
 //
 //  Created by Kalvar on 2014/5/22.
 //  Copyright (c) 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
@@ -8,6 +8,20 @@
 
 #import "KRBPN+NSUserDefaults.h"
 #import "KRBPNTrainedNetwork.h"
+
+@implementation NSUserDefaults (Private)
+
++(NSUserDefaults *)userDefaults
+{
+    return [NSUserDefaults standardUserDefaults];
+}
+
++(void)synchronize
+{
+    [[self userDefaults] synchronize];
+}
+
+@end
 
 @implementation NSUserDefaults (ExtendUsages)
 
@@ -17,7 +31,7 @@
  */
 +(id)defaultValueForKey:(NSString *)_key
 {
-    return [[NSUserDefaults standardUserDefaults] objectForKey:_key];
+    return [[self userDefaults] objectForKey:_key];
 }
 
 /*
@@ -63,8 +77,8 @@
  */
 +(void)saveDefaultValue:(id)_value forKey:(NSString *)_forKey
 {
-    [[NSUserDefaults standardUserDefaults] setObject:_value forKey:_forKey];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    [[self userDefaults] setObject:_value forKey:_forKey];
+    [self synchronize];
 }
 
 /*
@@ -97,8 +111,20 @@
 #pragma --mark Removes NSDefault Values
 +(void)removeValueForKey:(NSString *)_key
 {
-    [[NSUserDefaults standardUserDefaults] removeObjectForKey:_key];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    [[self userDefaults] removeObjectForKey:_key];
+    [self synchronize];
+}
+
++(void)removeValuesForKeys:(NSArray *)_keys
+{
+    if( [_keys isKindOfClass:[NSArray class]] )
+    {
+        for( NSString *_key in _keys )
+        {
+            [[self userDefaults] removeObjectForKey:_key];
+        }
+        [self synchronize];
+    }
 }
 
 @end
