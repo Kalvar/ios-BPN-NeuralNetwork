@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.description  = <<-DESC
                    Machine Learning (マシンラーニング) in this project, it implemented 3 layers ( Input Layer, Hidden Layer and Output Layer ) neural network (ニューラルネットワーク) and it named Back Propagation Neural Network (BPN). This version implemented QuickProp theory and Kecman's theory. KRBPN can be used in products recommendation (おすすめの商品), user behavior analysis (ユーザーの行動分析), data mining (データマイニング) and data analysis (データ分析).
                    DESC
-  s.homepage     = "https://github.com/Kalvar/ios-BPN-Algorithm"
+  s.homepage     = "https://github.com/Kalvar/ios-BPN-NeuralNetwork"
   s.license      = { :type => 'MIT', :file => 'LICENSE' }
   s.author       = { "Kalvar Lin" => "ilovekalvar@gmail.com" }
   s.social_media_url = "https://twitter.com/ilovekalvar"
