@@ -1,6 +1,6 @@
 //
 //  ViewController.m
-//  BPN V2.0
+//  BPN V2.0.1
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -67,7 +67,6 @@
     }];
     
     [_krBPN training];
-    //[_krBPN trainingSave];
 }
 
 //Only setups patterns and output goals, and 1 output.
@@ -99,8 +98,7 @@
         }
     }];
     
-    [_krBPN trainingRandom];
-    //[_krBPN trainingRandomAndSave];
+    [_krBPN trainingByRandomSettings];
 }
 
 //To learn and verify numbers 0 to 9. And only setups patterns and output goals, and 10 outputs.
@@ -249,7 +247,7 @@
         }
     }];
     
-    [_krBPN trainingRandom];
+    [_krBPN trainingByRandomSettings];
     //[_krBPN trainingRandomAndSave];
 }
 
@@ -293,7 +291,7 @@
         }
     }];
     
-    [_krBPN trainingRandom];
+    [_krBPN trainingByRandomSettings];
 }
 
 - (void)viewDidLoad
@@ -308,7 +306,7 @@
     // Convergence error, 收斂誤差值 ( Normally is 10^-3 or 10^-6 )
     _krBPN.convergenceError = 0.001f;
     // To limit that iterations
-    _krBPN.limitIteration  = 1000;
+    _krBPN.limitIteration   = 1000;
     
     // If you wanna use enhanced theory, and to setup that customized learning rate, you could use this as below :
     //_krBPN.quickPropFixedRate = 0.5f;
@@ -324,8 +322,8 @@
     
     // 每一次的迭代( Per iteration-training )
     [_krBPN setEachIteration:^(NSInteger times, NSDictionary *trainedInfo){
-        NSLog(@"Generation times : %i", times);
-        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedOutputResults]);
+        NSLog(@"Iterations : %i", times);
+        NSLog(@"Result per Iteration : %@", [trainedInfo objectForKey:KRBPNTrainedOutputResults]);
     }];
     
     // Setup anything by yourself, and 2 outputs.
@@ -340,20 +338,18 @@
     // 醫療數據預測
     //[self useSample4];
     
-    //Remove your testing trained-network records.
-    //[_krBPN removeNetwork];
-    
     //Start the training, and random the weights, biases, if you use this method that you won't need to setup any weights and biases before.
     //Random means let network to auto setup inputWeights, hiddenBiases, hiddenWeights values.
-    //[_krBPN trainingRandom];
-    //As above said, then it will be saved the trained network after done.
-    //[_krBPN trainingRandomAndSave];
+    //[_krBPN trainingByRandomSettings];
+    
+    //Random settings as above said, then it will be saved the trained network after done.
+    //[_krBPN trainingByRandomWithSave];
     
     //Start the training network, and it won't be saving the trained-network when finished.
     //[_krBPN training];
     
     //Start the training network, and it will auto-saving the trained-network when finished.
-    //[_krBPN trainingSave];
+    //[_krBPN trainingBySave];
     
     //If you wanna pause the training.
     //[_krBPN pause];
@@ -369,16 +365,6 @@
     
     //If you wanna recover the trained-network data.
     //[_krBPN recoverNetwork];
-    //Or you wanna use the KRBPNTrainedNetwork object to recover the training data.
-    /*
-    KRBPNTrainedNetwork *_trainedNetwork = [[KRBPNTrainedNetwork alloc] init];
-    _trainedNetwork.inputs = [NSMutableArray arrayWithObjects:
-                              @[@1],
-                              @[@0],
-                              @[@1],
-                              nil];
-    [_krBPN recoverNetwork:_trainedNetwork];
-    */
     
     //To remove the saved trained-network.
     //[_krBPN removeNetwork];

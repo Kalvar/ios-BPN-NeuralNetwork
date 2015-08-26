@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V2.0
+//  BPN V2.0.1
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -96,9 +96,9 @@ typedef void(^KRBPNIteration)(NSInteger times, NSDictionary *trainedInfo);
 
 #pragma --mark Training Public Methods
 -(void)training;
--(void)trainingSave;
--(void)trainingRandom;
--(void)trainingRandomAndSave;
+-(void)trainingBySave;
+-(void)trainingByRandomSettings;
+-(void)trainingByRandomWithSave;
 -(void)pause;
 -(void)continueTraining;
 -(void)reset;

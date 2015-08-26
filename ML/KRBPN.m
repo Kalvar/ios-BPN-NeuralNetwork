@@ -1,6 +1,6 @@
 //
 //  KRBPN.m
-//  BPN V2.0
+//  BPN V2.0.1
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -52,7 +52,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 //儲存每一個迭代的誤差總和
 //@property (nonatomic, strong) NSMutableArray *_iterationErrors;
 
-@property (nonatomic, strong) KRQuickProp *_krQuickProp;
+@property (nonatomic, strong) KRQuickProp *_quickProp;
 
 @end
 
@@ -92,7 +92,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
     self.trainingCompletion  = nil;
     self.eachIteration       = nil;
     
-    self._krQuickProp        = [KRQuickProp sharedInstance];
+    self._quickProp          = [KRQuickProp sharedInstance];
     
     [self _resetTrainedParameters];
     
@@ -250,17 +250,17 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 
 -(void)_addInputs:(NSArray *)_inputPatterns
 {
-    [self._krQuickProp addInputs:_inputPatterns];
+    [self._quickProp addInputs:_inputPatterns];
 }
 
 -(void)_addInputDeltaWeights:(NSArray *)_weights
 {
-    [self._krQuickProp addInputDeltaWeights:_weights];
+    [self._quickProp addInputDeltaWeights:_weights];
 }
 
 -(void)_addHiddenDeltaWeights:(NSArray *)_weights
 {
-    [self._krQuickProp addHiddenDeltaWeights:_weights];
+    [self._quickProp addHiddenDeltaWeights:_weights];
 }
 
 -(BOOL)_isUsingQuickProp
@@ -525,20 +525,13 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
                 
                 if( [self _isUsingQuickProp] )
                 {
-                    float _quickpropLearningRate = [self._krQuickProp calculateOutputLearningRateAtNetIndex:_netIndex
+                    float _quickpropLearningRate = [self._quickProp calculateOutputLearningRateAtNetIndex:_netIndex
                                                                                                 outputIndex:_outputIndex
                                                                                                 targetError:_targetError
                                                                                                hiddenOutput:_hiddenOutput];;
-                    float _lastDeltaWeight       = [self._krQuickProp getHiddenDeltaWeightAtNetIndex:_netIndex outputIndex:_outputIndex];
-                    
-                    //NSLog(@"_targetError : %f", _targetError);
-                    //NSLog(@"_quickpropLearningRate : %f", _quickpropLearningRate);
-                    //NSLog(@"_lastDeltaWeight : %f", _lastDeltaWeight);
-                    
-                    _deltaWeight += ( _quickpropLearningRate * _lastDeltaWeight );
-                    [self._krQuickProp saveHiddenDeltaWeightAtNetIndex:_netIndex outputIndex:_outputIndex deltaWeight:_deltaWeight];
-                    
-                    //NSLog(@"_deltaWeight : %f\n\n\n", _deltaWeight);
+                    float _lastDeltaWeight       = [self._quickProp getHiddenDeltaWeightAtNetIndex:_netIndex outputIndex:_outputIndex];
+                    _deltaWeight                += ( _quickpropLearningRate * _lastDeltaWeight );
+                    [self._quickProp saveHiddenDeltaWeightAtNetIndex:_netIndex outputIndex:_outputIndex deltaWeight:_deltaWeight];
                 }
                 
                 // + Delta Weight (權重調整量)
@@ -606,14 +599,14 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
                 
                 if( [self _isUsingQuickProp] )
                 {
-                    float _quickpropLearningRate = [self._krQuickProp calculateInputLearningRateAtNetIndex:_inputIndex
+                    float _quickpropLearningRate = [self._quickProp calculateInputLearningRateAtNetIndex:_inputIndex
                                                                                                weightIndex:_weightIndex
                                                                                                hiddenError:_hiddenError
                                                                                                 inputValue:_inputValue];
-                    float _lastDeltaWeight = [self._krQuickProp getInputDeltaWeightAtNetIndex:_inputIndex outputIndex:_weightIndex];
+                    float _lastDeltaWeight = [self._quickProp getInputDeltaWeightAtNetIndex:_inputIndex outputIndex:_weightIndex];
                     _deltaWeight           +=( _quickpropLearningRate * _lastDeltaWeight );
                     _resetWeight           = _netWeight + _deltaWeight;
-                    [self._krQuickProp saveInputDeltaWeightAtNetIndex:_inputIndex weightIndex:_weightIndex deltaWeight:_deltaWeight];
+                    [self._quickProp saveInputDeltaWeightAtNetIndex:_inputIndex weightIndex:_weightIndex deltaWeight:_deltaWeight];
                 }
                 else
                 {
@@ -631,12 +624,12 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
         
         if( [self _isUsingQuickProp] )
         {
-            [self._krQuickProp clean];
-            [self._krQuickProp addOutputErrors:self._outputErrors];
-            [self._krQuickProp addOutputResults:self.outputResults];
-            [self._krQuickProp addHiddenErrors:_hiddenErrors];
-            [self._krQuickProp addHiddenOutputs:self._hiddenOutputs];
-            [self._krQuickProp plus];
+            [self._quickProp clean];
+            [self._quickProp addOutputErrors:self._outputErrors];
+            [self._quickProp addOutputResults:self.outputResults];
+            [self._quickProp addHiddenErrors:_hiddenErrors];
+            [self._quickProp addHiddenOutputs:self._hiddenOutputs];
+            [self._quickProp plus];
         }
     }
     
@@ -715,7 +708,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
         // Is using QuickProp ?
         if( [self _isUsingQuickProp] )
         {
-            [self._krQuickProp setUsingPatternIndex:self._patternIndex];
+            [self._quickProp setUsingPatternIndex:self._patternIndex];
         }
         /*
          * @ 每一筆輸入向量( 每組訓練的 Pattern )都會有自己的輸出期望值
@@ -806,8 +799,8 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 @synthesize learningRate        = _learningRate;
 @synthesize convergenceError    = _convergenceError;
 @synthesize fOfAlpha            = _fOfAlpha;
-@synthesize limitIteration     = _limitIteration;
-@synthesize presentIteration  = _presentIteration;
+@synthesize limitIteration      = _limitIteration;
+@synthesize presentIteration    = _presentIteration;
 @synthesize isTraining          = _isTraining;
 @synthesize trainedInfo         = _trainedInfo;
 @synthesize trainedNetwork      = _trainedNetwork;
@@ -830,7 +823,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 @synthesize _patternErrors;
 //@synthesize _iterationErrors;
 
-@synthesize _krQuickProp;
+@synthesize _quickProp;
 
 +(instancetype)sharedNetwork
 {
@@ -996,7 +989,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
  * @ Start Training BPN
  *   - And it'll auto save the trained-network when it finished.
  */
--(void)trainingSave
+-(void)trainingBySave
 {
     [self _trainingWithExtraHandler:^
     {
@@ -1008,7 +1001,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
  * @ Start Training BPN
  *   - It'll random setup all weights and biases.
  */
--(void)trainingRandom
+-(void)trainingByRandomSettings
 {
     [self randomWeights];
     [self training];
@@ -1018,7 +1011,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
  * @ Start Training BPN
  *   - It'll random setup all weights and biases, then it'll auto save the trained-network when it finished.
  */
--(void)trainingRandomAndSave
+-(void)trainingByRandomWithSave
 {
     self._isDoneSave = YES;
     [self randomWeights];
@@ -1105,7 +1098,24 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
  */
 -(void)saveNetwork
 {
-    KRBPNTrainedNetwork *_bpnNetwork = [self copy];
+    // The key-data sets of trained network.
+    KRBPNTrainedNetwork *_bpnNetwork = [[KRBPNTrainedNetwork alloc] init];
+    _bpnNetwork.inputs               = _inputs;
+    _bpnNetwork.inputWeights         = _inputWeights;
+    _bpnNetwork.hiddenWeights        = _hiddenWeights;
+    _bpnNetwork.hiddenBiases         = _hiddenBiases;
+    _bpnNetwork.outputBiases         = _outputBiases;
+    _bpnNetwork.outputResults        = _outputResults;
+    _bpnNetwork.outputGoals          = _outputGoals;
+    _bpnNetwork.learningRate         = _learningRate;
+    _bpnNetwork.convergenceError     = _convergenceError;
+    _bpnNetwork.fOfAlpha             = _fOfAlpha;
+    _bpnNetwork.limitIteration       = _limitIteration;
+    _bpnNetwork.presentIteration     = _presentIteration;
+    _bpnNetwork.activeFunction       = _activeFunction;
+    _bpnNetwork.learningMode         = _learningMode;
+    _bpnNetwork.earlyStopping        = _earlyStopping;
+    _bpnNetwork.quickProp            = _quickProp;
     [self removeNetwork];
     _trainedNetwork                  = _bpnNetwork;
     [NSUserDefaults saveTrainedNetwork:_bpnNetwork forKey:_kTrainedNetworkInfo];
@@ -1145,12 +1155,12 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
             _activeFunction     = _recoverNetwork.activeFunction;
             _learningMode       = _recoverNetwork.learningMode;
             _earlyStopping      = _recoverNetwork.earlyStopping;
-            _krQuickProp        = _recoverNetwork.quickProp;
-            if( _krQuickProp != nil &&
-                _krQuickProp.inputLearningMode  == KRQuickPropLearningModeByInputFixed &&
-                _krQuickProp.outputLearningMode == KRQuickPropLearningModeByInputFixed )
+            _quickProp          = _recoverNetwork.quickProp;
+            if( _quickProp != nil &&
+                _quickProp.inputLearningMode  == KRQuickPropLearningModeByInputFixed &&
+                _quickProp.outputLearningMode == KRQuickPropLearningModeByInputFixed )
             {
-                _quickPropFixedRate = _krQuickProp.inputLearningRate;
+                _quickPropFixedRate = _quickProp.inputLearningRate;
             }
             [self removeNetwork];
             _trainedNetwork     = _recoverNetwork;
@@ -1230,25 +1240,25 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
     _learningMode = _mode;
     if(_learningMode != KRBPNLearningModeByNormal)
     {
-        if( _krQuickProp == nil )
+        if( _quickProp == nil )
         {
-            _krQuickProp = [KRQuickProp sharedInstance];
+            _quickProp = [KRQuickProp sharedInstance];
         }
         
         switch (_mode)
         {
             case KRBPNLearningModeByQuickPropSmartHybrid:
-                [_krQuickProp setInputFixedRateByRandom];
-                _krQuickProp.outputLearningMode = KRQuickPropLearningModeByOutputDynamic;
+                [_quickProp setInputFixedRateByRandom];
+                _quickProp.outputLearningMode = KRQuickPropLearningModeByOutputDynamic;
                 break;
             case KRBPNLearningModeByQuickPropFixed:
-                [_krQuickProp setBothFixedRateByRandom];
+                [_quickProp setBothFixedRateByRandom];
                 break;
             case KRBPNLearningModeByQuickPropDynamic:
                 // ...
                 break;
             case KRBPNLearningModeByQuickPropCustomFixed:
-                [_krQuickProp setBothFixedRate:_quickPropFixedRate];
+                [_quickProp setBothFixedRate:_quickPropFixedRate];
                 break;
             default:
                 break;
@@ -1261,7 +1271,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
     if(_fixedRate > 0.0f)
     {
         _quickPropFixedRate = _fixedRate;
-        if( _krQuickProp != nil )
+        if( _quickProp != nil )
         {
             [self setLearningMode:KRBPNLearningModeByQuickPropCustomFixed];
         }

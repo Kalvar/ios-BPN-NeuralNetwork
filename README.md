@@ -9,7 +9,7 @@ This project designed for quickly operation for mobile device perform the basic 
 
 ```ruby
 platform :ios, '7.0'
-pod "KRBPN", "~> 2.0"
+pod "KRBPN", "~> 2.0.1"
 ```
 
 ## How to use
@@ -27,11 +27,10 @@ pod "KRBPN", "~> 2.0"
 
 @synthesize _krBPN;
 
-//Setups any detail, and 2 outputs, you could set more outputs.
 -(void)useSample1
 {
-    _krBPN.activationFunction = KRBPNActivationFunctionSigmoid;
-
+    _krBPN.activeFunction = KRBPNActivationBySigmoid;
+    
     //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，因使用 S 形轉換函數，故 Input 值域須為 [0, 1]，輸出目標為 [0, 1]
     //Add the patterns, the weights connect with hidden layer, the output targets
     [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f, @0.8f]];  //Pattern 1
@@ -75,17 +74,16 @@ pod "KRBPN", "~> 2.0"
     }];
     
     [_krBPN training];
-    //[_krBPN trainingSave];
 }
 
 //Only setups patterns and output goals, and 1 output.
 -(void)useSample2
 {
-    _krBPN.activationFunction = KRBPNActivationFunctionTanh;
-
-    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f]];    //Pattern 1, net 1, 2, 3, 4, and 1 output
-    [_krBPN addPatterns:@[@0, @-0.8, @0.3, @-0.9] outputGoals:@[@-0.1f]]; //Pattern 2, same as pattern 1
-    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.9f]];    //Pattern 3, same as pattern 1
+    _krBPN.activeFunction = KRBPNActivationByTanh;
+    
+    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f]];      //Pattern 1
+    [_krBPN addPatterns:@[@-0.5, @0.8, @-0.3, @0.9] outputGoals:@[@-0.1f]]; //Pattern 2
+    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.9f]];      //Pattern 3
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
     //訓練完成時( Training complete )
@@ -103,19 +101,18 @@ pod "KRBPN", "~> 2.0"
             }];
             
             [_weakKrBPN recoverNetwork];
-            [_weakKrBPN directOutputAtInputs:@[@0, @-0.8, @0.3, @-0.9]];
+            [_weakKrBPN directOutputAtInputs:@[@-0.5, @0.8, @-0.3, @0.9]];
         }
     }];
     
-    [_krBPN trainingRandom];
-    //[_krBPN trainingRandomAndSave];
+    [_krBPN trainingByRandomSettings];
 }
 
 //To learn and verify numbers 0 to 9. And only setups patterns and output goals, and 10 outputs.
 -(void)useSample3
 {
-    _krBPN.activationFunction = KRBPNActivationFunctionSigmoid;
-
+    _krBPN.activeFunction = KRBPNActivationBySigmoid;
+    
     //1
     [_krBPN addPatterns:@[@0, @0, @0, @0,
                           @0, @0, @0, @0,
@@ -257,7 +254,7 @@ pod "KRBPN", "~> 2.0"
         }
     }];
     
-    [_krBPN trainingRandom];
+    [_krBPN trainingByRandomSettings];
     //[_krBPN trainingRandomAndSave];
 }
 
@@ -301,7 +298,7 @@ pod "KRBPN", "~> 2.0"
         }
     }];
     
-    [_krBPN trainingRandom];
+    [_krBPN trainingByRandomSettings];
 }
 
 - (void)viewDidLoad
@@ -332,8 +329,8 @@ pod "KRBPN", "~> 2.0"
     
     // 每一次的迭代( Per iteration-training )
     [_krBPN setEachIteration:^(NSInteger times, NSDictionary *trainedInfo){
-        NSLog(@"Generation times : %i", times);
-        //NSLog(@"Generation result : %f\n\n\n", [trainedInfo objectForKey:KRBPNTrainedOutputResults]);
+        NSLog(@"Iterations : %i", times);
+        NSLog(@"Result per Iteration : %@", [trainedInfo objectForKey:KRBPNTrainedOutputResults]);
     }];
     
     // Setup anything by yourself, and 2 outputs.
@@ -353,7 +350,7 @@ pod "KRBPN", "~> 2.0"
 
 ## Version
 
-V2.0
+V2.0.1
 
 ## License
 
