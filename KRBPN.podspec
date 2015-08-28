@@ -13,6 +13,6 @@ Pod::Spec.new do |s|
   s.platform     = :ios, '7.0'
   s.requires_arc = true
   s.public_header_files = 'ML/KRBPN.h'
-  s.source_files = 'ML/*'
+  s.source_files = 'ML/**/*'
   s.frameworks   = 'Foundation'
 end
