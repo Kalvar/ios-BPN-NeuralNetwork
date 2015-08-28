@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/Kalvar/ios-BPN-Algorithm.git", :tag => s.version.to_s }
   s.platform     = :ios, '7.0'
   s.requires_arc = true
-  s.public_header_files = 'ML/*.h'
-  s.source_files = 'ML/*.h'
+  s.public_header_files = 'ML/KRBPN.h'
+  s.source_files = 'ML/*.{h,m}'
   s.frameworks   = 'Foundation'
-end 
+end
