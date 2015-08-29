@@ -1,6 +1,6 @@
 //
 //  KRBPN.m
-//  BPN V2.0.1
+//  BPN V2.0.2
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -92,7 +92,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
     self.trainingCompletion  = nil;
     self.eachIteration       = nil;
     
-    self._quickProp          = [KRQuickProp sharedInstance];
+    self._quickProp          = [[KRQuickProp alloc] init]; //[KRQuickProp sharedInstance];
     
     [self _resetTrainedParameters];
     
@@ -1022,6 +1022,15 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 }
 
 /*
+ * @ Continue training besides with adding pattern
+ */
+-(void)trainingWithAddPatterns:(NSArray *)_patterns outputGoals:(NSArray *)_goals
+{
+    [self addPatterns:_patterns outputGoals:_goals];
+    [self continueTraining];
+}
+
+/*
  * @ Pause Training BPN
  *   - It'll force stop, and the trained data will keep in network.
  */
@@ -1057,10 +1066,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
     [self training];
 }
 
-/*
- * @ 單純使用訓練好的網路作輸出，不跑導傳遞修正網路
- */
--(void)directOutputAtInputs:(NSArray *)_rawInputs
+-(void)directOutputAtInputs:(NSArray *)_rawInputs completion:(void(^)())_completion
 {
     if( _rawInputs != nil )
     {
@@ -1083,11 +1089,43 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
             if( self.limitIteration > 0 && self.presentIteration >= self.limitIteration )
             {
                 [self _completedTraining];
+                if( _completion )
+                {
+                    _completion();
+                }
                 return;
             }
         });
     });
-    
+}
+
+/*
+ * @ 單純使用訓練好的網路作輸出，不跑導傳遞修正網路
+ */
+-(void)directOutputAtInputs:(NSArray *)_rawInputs
+{
+    [self directOutputAtInputs:_rawInputs completion:nil];
+}
+
+-(void)directOutputAtInputsOnMainThread:(NSArray *)_rawInputs
+{
+    if( _rawInputs != nil )
+    {
+        [_inputs removeAllObjects];
+        [_inputs addObject:_rawInputs];
+    }
+    NSArray *_trainInputs  = [_inputs firstObject];
+    [self pause];
+    [self _formatMaxMultiple];
+    _limitIteration    = 1;
+    _presentIteration = _limitIteration;
+    self._hiddenOutputs = [self _sumHiddenLayerOutputsFromInputs:_trainInputs];
+    self.outputResults  = [self _sumOutputLayerNetsValue];
+    if( self.limitIteration > 0 && self.presentIteration >= self.limitIteration )
+    {
+        [self _completedTraining];
+        return;
+    }
 }
 
 #pragma --mark Trained Network Public Methods
