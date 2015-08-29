@@ -16,8 +16,8 @@
 /*
  * @ 儲存訓練過後的 BPN Network 數據資料
  */
-#import "KRBPNTrainedNetwork.h"
-
+//#import "KRBPNTrainedNetwork.h"
+@class KRBPNTrainedNetwork;
 /*
  * @ 訓練完成時
  *   - success     : 是否訓練成功
