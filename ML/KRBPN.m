@@ -7,6 +7,7 @@
 //
 
 #import "KRBPN.h"
+#import "KRBPNTrainedNetwork.h"
 
 static NSString *_kOriginalInputs             = @"_kOriginalInputs";
 static NSString *_kOriginalInputWeights       = @"_kOriginalInputWeights";
