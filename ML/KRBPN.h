@@ -1,6 +1,6 @@
 //
 //  KRBPN.h
-//  BPN V2.0.2
+//  BPN V2.0.4
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
@@ -16,8 +16,8 @@
 /*
  * @ 儲存訓練過後的 BPN Network 數據資料
  */
-//#import "KRBPNTrainedNetwork.h"
-@class KRBPNTrainedNetwork;
+#import "KRBPNTrainedNetwork.h"
+
 /*
  * @ 訓練完成時
  *   - success     : 是否訓練成功

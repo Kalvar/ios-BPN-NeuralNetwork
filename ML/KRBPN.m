@@ -1,13 +1,12 @@
 //
 //  KRBPN.m
-//  BPN V2.0.2
+//  BPN V2.0.4
 //
 //  Created by Kalvar on 13/6/28.
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
 
 #import "KRBPN.h"
-#import "KRBPNTrainedNetwork.h"
 
 static NSString *_kOriginalInputs             = @"_kOriginalInputs";
 static NSString *_kOriginalInputWeights       = @"_kOriginalInputWeights";

@@ -9,7 +9,7 @@ This project designed for quickly operation for mobile device perform the basic 
 
 ```ruby
 platform :ios, '7.0'
-pod "KRBPN", "~> 2.0.2"
+pod "KRBPN", "~> 2.0.4"
 ```
 
 ## How to use
@@ -350,7 +350,7 @@ pod "KRBPN", "~> 2.0.2"
 
 ## Version
 
-V2.0.2
+V2.0.4
 
 ## License
 

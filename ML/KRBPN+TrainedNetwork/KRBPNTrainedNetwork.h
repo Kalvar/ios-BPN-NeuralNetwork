@@ -1,6 +1,6 @@
 //
 //  KRBPNTrainedNetwork.h
-//  BPN V2.0.2
+//  BPN V2.0.4
 //
 //  Created by Kalvar on 2014/5/22.
 //  Copyright (c) 2014年 Kuo-Ming Lin (Kalvar). All rights reserved.
