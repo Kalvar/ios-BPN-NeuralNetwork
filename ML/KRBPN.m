@@ -130,7 +130,7 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
     
     if( self.delegate )
     {
-        if( [self.delegate respondsToSelector:@selector(krBPNDidTrainFinished:trainedInfo:totalTimes:)] )
+        if( [self.delegate respondsToSelector:@selector(krBpnDidTrainFinished:trainedInfo:totalTimes:)] )
         {
             [self.delegate krBpnDidTrainFinished:self trainedInfo:self.trainedInfo totalTimes:self.presentIteration];
         }
