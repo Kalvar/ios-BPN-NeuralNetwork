@@ -9,7 +9,7 @@ Pod::Spec.new do |s|
   s.license      = { :type => 'MIT', :file => 'LICENSE' }
   s.author       = { "Kalvar Lin" => "ilovekalvar@gmail.com" }
   s.social_media_url = "https://twitter.com/ilovekalvar"
-  s.source       = { :git => "https://github.com/Kalvar/ios-BPN-Algorithm.git", :tag => s.version.to_s }
+  s.source       = { :git => "https://github.com/Kalvar/ios-BPN-NeuralNetwork.git", :tag => s.version.to_s }
   s.platform     = :ios, '7.0'
   s.requires_arc = true
   s.public_header_files = 'ML/**/*.h'
