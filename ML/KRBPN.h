@@ -6,16 +6,12 @@
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
 /*
- * @ 3 層架構
- *   - 輸入層
- *   - 隱藏層
- *   - 輸出層
+ * @ 3 Layers
+ *   - Inputs Layer
+ *   - Hidden Layer
+ *   - Outputs Layer
  */
 #import <Foundation/Foundation.h>
-
-/*
- * @ 儲存訓練過後的 BPN Network 數據資料
- */
 #import "KRBPNTrainedNetwork.h"
 
 /*

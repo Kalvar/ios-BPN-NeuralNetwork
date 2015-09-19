@@ -9,6 +9,7 @@
 #import "KRQuickProp.h"
 #import "KRBPN+NSUserDefaults.h"
 
+#pragma --mark for Public getting the trained network information
 /*
  * @ 當前訓練的 BPN Network 數據資料
  *   - trainedInfo = @{};
@@ -27,6 +28,26 @@ static NSString *KRBPNTrainedOutputBiases   = @"KRBPNTrainedOutputBiases";
 static NSString *KRBPNTrainedOutputResults  = @"KRBPNTrainedOutputResults";
 static NSString *KRBPNTrainedIterations     = @"KRBPNTrainedIterations";
 
+#pragma --mark for Private getting the parameters and the settings
+static NSString *_kOriginalInputs             = @"_kOriginalInputs";
+static NSString *_kOriginalInputWeights       = @"_kOriginalInputWeights";
+static NSString *_kOriginalHiddenWeights      = @"_kOriginalHiddenWeights";
+static NSString *_kOriginalHiddenBiases       = @"_kOriginalHiddenBiases";
+static NSString *_kOriginalOutputBiases       = @"_kOriginalOutputBiases";
+static NSString *_kOriginalOutputResults      = @"_kOriginalOutputResults";
+static NSString *_kOriginalOutputGoals        = @"_kOriginalOutputGoals";
+static NSString *_kOriginalLearningRate       = @"_kOriginalLearningRate";
+static NSString *_kOriginalConvergenceError   = @"_kOriginalConvergenceError";
+static NSString *_kOriginalFOfAlpha           = @"_kOriginalFOfAlpha";
+static NSString *_kOriginalLimitIterations    = @"_kOriginalLimitIterations";
+static NSString *_kOriginalActiveFunction     = @"_kOriginalActiveFunction";
+static NSString *_kOriginalLearningMode       = @"_kOriginalLearningMode";
+static NSString *_kOriginalEarlyStopping      = @"_kOriginalEarlyStopping";
+static NSString *_kOriginalQuickPropFixedRate = @"_kOriginalQuickPropFixedRate";
+static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
+//static NSString *_kOriginalMaxMultiple      = @"_kOriginalMaxMultiple";
+
+#pragma --mark for Some Paramaters Choosing
 typedef enum KRBPNActivations
 {
     //Sigmoid (Normally usage)

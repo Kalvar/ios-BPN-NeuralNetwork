@@ -8,25 +8,6 @@
 
 #import "KRBPN.h"
 
-static NSString *_kOriginalInputs             = @"_kOriginalInputs";
-static NSString *_kOriginalInputWeights       = @"_kOriginalInputWeights";
-static NSString *_kOriginalHiddenWeights      = @"_kOriginalHiddenWeights";
-static NSString *_kOriginalHiddenBiases       = @"_kOriginalHiddenBiases";
-static NSString *_kOriginalOutputBiases       = @"_kOriginalOutputBiases";
-static NSString *_kOriginalOutputResults      = @"_kOriginalOutputResults";
-static NSString *_kOriginalOutputGoals        = @"_kOriginalOutputGoals";
-static NSString *_kOriginalLearningRate       = @"_kOriginalLearningRate";
-static NSString *_kOriginalConvergenceError   = @"_kOriginalConvergenceError";
-static NSString *_kOriginalFOfAlpha           = @"_kOriginalFOfAlpha";
-static NSString *_kOriginalLimitIterations    = @"_kOriginalLimitIterations";
-static NSString *_kOriginalActiveFunction     = @"_kOriginalActiveFunction";
-static NSString *_kOriginalLearningMode       = @"_kOriginalLearningMode";
-static NSString *_kOriginalEarlyStopping      = @"_kOriginalEarlyStopping";
-static NSString *_kOriginalQuickPropFixedRate = @"_kOriginalQuickPropFixedRate";
-//static NSString *_kOriginalMaxMultiple      = @"_kOriginalMaxMultiple";
-
-static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
-
 @interface KRBPN ()
 
 //隱藏層的輸出值
@@ -786,29 +767,10 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 
 @implementation KRBPN
 
-@synthesize delegate            = _delegate;
-
-@synthesize inputs              = _inputs;
-@synthesize inputWeights        = _inputWeights;
-@synthesize hiddenWeights       = _hiddenWeights;
-@synthesize hiddenBiases        = _hiddenBiases;
 @synthesize countHiddenNets     = _countHiddenNets;
-@synthesize outputBiases        = _outputBiases;
-@synthesize outputResults       = _outputResults;
-@synthesize outputGoals         = _outputGoals;
-@synthesize learningRate        = _learningRate;
-@synthesize convergenceError    = _convergenceError;
-@synthesize fOfAlpha            = _fOfAlpha;
-@synthesize limitIteration      = _limitIteration;
-@synthesize presentIteration    = _presentIteration;
-@synthesize isTraining          = _isTraining;
 @synthesize trainedInfo         = _trainedInfo;
 @synthesize trainedNetwork      = _trainedNetwork;
-@synthesize activeFunction      = _activeFunction;
-@synthesize trainingCompletion  = _trainingCompletion;
-@synthesize eachIteration       = _eachIteration;
 @synthesize learningMode        = _learningMode;
-@synthesize earlyStopping       = _earlyStopping;
 @synthesize quickPropFixedRate  = _quickPropFixedRate;
 
 @synthesize _hiddenOutputs;
@@ -821,8 +783,6 @@ static NSString *_kTrainedNetworkInfo         = @"kTrainedNetworkInfo";
 @synthesize _maxMultiple;
 @synthesize _compareTargets;
 @synthesize _patternErrors;
-//@synthesize _iterationErrors;
-
 @synthesize _quickProp;
 
 +(instancetype)sharedNetwork

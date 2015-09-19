@@ -8,6 +8,7 @@
 
 #import "KRBPN+Definition.h"
 
+//Here saved that trained BPN network.
 @interface KRBPNTrainedNetwork : NSObject <NSCoding>
 
 @property (nonatomic, strong) NSMutableArray *inputs;

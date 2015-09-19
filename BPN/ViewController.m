@@ -294,6 +294,64 @@
     [_krBPN trainingByRandomSettings];
 }
 
+-(void)useSample5
+{
+    _krBPN.activeFunction = KRBPNActivationBySigmoid;
+    
+    [_krBPN addPatterns:@[@0.65, @0.05, @0.8] outputGoals:@[@1.0f]];
+    [_krBPN addPatterns:@[@0.05, @0.9, @0.0] outputGoals:@[@0.0f]];
+    
+    [_krBPN addPatterns:@[@0.1, @0.1, @0.7] outputGoals:@[@0.0f]];
+    [_krBPN addPatterns:@[@0.43, @0.09, @0.86] outputGoals:@[@1.0f]];
+    
+    [_krBPN addPatterns:@[@0.1, @0.5, @0.4] outputGoals:@[@0.0f]];
+    [_krBPN addPatterns:@[@0.11, @0.3, @0.3] outputGoals:@[@0.0f]];
+    
+    [_krBPN addPatterns:@[@0.01, @0.77, @0.22] outputGoals:@[@0.0f]];
+    [_krBPN addPatterns:@[@0.02, @0.5, @0.4] outputGoals:@[@0.0f]];
+    
+    [_krBPN addPatterns:@[@0.7, @0.1, @0.89] outputGoals:@[@1.0f]];
+    [_krBPN addPatterns:@[@0.6, @0.06, @0.8] outputGoals:@[@1.0f]];
+    
+    
+    [_krBPN addPatternWeights:@[@-0.38829, @0.199514]]; //W14, W15
+    [_krBPN addPatternWeights:@[@-0.21583, @0.004365]]; //W24, W25
+    [_krBPN addPatternWeights:@[@-0.35639, @-0.17368]]; //W34, W35
+    
+    [_krBPN addHiddenLayerNetBias:0.000963f outputWeights:@[@-0.45333f]]; // Net 4
+    [_krBPN addHiddenLayerNetBias:-0.01158f outputWeights:@[@0.067638f]];  // Net 5
+    
+    // Net 6
+    [_krBPN addOutputBiases:@[@0.184294f]];
+    
+    __block typeof(_krBPN) _weakKrBPN = _krBPN;
+    //訓練完成時( Training complete )
+    [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
+        if( success )
+        {
+            NSLog(@"Training done with total times : %i", totalTimes);
+            NSLog(@"TrainedInfo 1 : %@", trainedInfo);
+            
+            //Start in checking the network is correctly trained.
+            NSLog(@"======== Start in Verification ========");
+            [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
+                NSLog(@"Training done with total times : %i", totalTimes);
+                NSLog(@"TrainedInfo 2 : %@", trainedInfo);
+            }];
+            
+            [_weakKrBPN recoverNetwork];
+            // To predict how many years could be alive with the patients.
+            [_weakKrBPN directOutputAtInputs:@[@0.6, @0.04, @0.7]];  // Goal 1.0f
+            [_weakKrBPN directOutputAtInputs:@[@0.03, @0.67, @0.2]]; // Goal 0.0f
+            [_weakKrBPN directOutputAtInputs:@[@0.54, @0.06, @0.9]]; // Goal 1.0f
+        }
+    }];
+    
+    
+    [_krBPN training];
+    //[_krBPN trainingByRandomSettings];
+}
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
@@ -306,7 +364,7 @@
     // Convergence error, 收斂誤差值 ( Normally is 10^-3 or 10^-6 )
     _krBPN.convergenceError = 0.001f;
     // To limit that iterations
-    _krBPN.limitIteration   = 1000;
+    _krBPN.limitIteration   = 2000;
     
     // If you wanna use enhanced theory, and to setup that customized learning rate, you could use this as below :
     //_krBPN.quickPropFixedRate = 0.5f;
@@ -319,6 +377,8 @@
     
     // If you wanna use Fahlman's QuickProp combined Kecman's Fixed Rate. Yes, in my experiences this usage method is better than others.
     _krBPN.learningMode = KRBPNLearningModeByQuickPropSmartHybrid;
+    
+    //_krBPN.learningMode = KRBPNLearningModeByNormal;
     
     // 每一次的迭代( Per iteration-training )
     [_krBPN setEachIteration:^(NSInteger times, NSDictionary *trainedInfo){
@@ -337,6 +397,8 @@
     
     // 醫療數據預測
     //[self useSample4];
+    
+    //[self useSample5];
     
     //Start the training, and random the weights, biases, if you use this method that you won't need to setup any weights and biases before.
     //Random means let network to auto setup inputWeights, hiddenBiases, hiddenWeights values.
