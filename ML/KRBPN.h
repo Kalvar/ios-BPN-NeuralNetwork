@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 - 2015年 Kuo-Ming Lin (Kalvar Lin). All rights reserved.
 //
 /*
- * @ 3 Layers
+ * @ 3 Layers + EDBD
  *   - Inputs Layer
  *   - Hidden Layer
  *   - Outputs Layer
@@ -79,6 +79,8 @@ typedef void(^KRBPNIteration)(NSInteger times, NSDictionary *trainedInfo);
 @property (nonatomic, assign) KRBPNEarlyStoppings earlyStopping;
 //QuickProp 固定學習速率, It must > 0.0f
 @property (nonatomic, assign) float quickPropFixedRate;
+//設定要在初始設定幾顆隱藏層神經元
+@property (nonatomic, assign) NSInteger hiddenNets;
 
 +(instancetype)sharedNetwork;
 -(instancetype)init;

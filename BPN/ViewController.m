@@ -26,39 +26,36 @@
     
     //各輸入向量陣列值 & 每一筆輸入向量的期望值( 輸出期望 )，因使用 S 形轉換函數，故 Input 值域須為 [0, 1]，輸出目標為 [0, 1]
     //Add the patterns, the weights connect with hidden layer, the output targets
-    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f, @0.8f]];  //Pattern 1
-    [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoals:@[@0.1f, @0.1f]];    //Pattern 2
-    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.95f, @0.9f]]; //Pattern 3
+    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f, @0.8f]];
+    [_krBPN addPatterns:@[@0, @1, @0.3, @0.9] outputGoals:@[@0.1f, @0.1f]];
+    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.95f, @0.9f]];
     
-    //輸入層各向量值到隱藏層神經元的權重 ( 連結同一個 Net 的就一組一組分開，有幾個 Hidden Net 就會有幾組 )
     //Add pattern-weights in Input layer to Hidden Layer
-    [_krBPN addPatternWeights:@[@0.2, @-0.3]]; //W15, W16
-    [_krBPN addPatternWeights:@[@0.4, @0.1]];  //W25, W26
-    [_krBPN addPatternWeights:@[@-0.5, @0.2]]; //W35, W36
-    [_krBPN addPatternWeights:@[@-0.1, @0.3]]; //W45, W46
+    [_krBPN addPatternWeights:@[@0.2, @-0.3]];
+    [_krBPN addPatternWeights:@[@0.4, @0.1]];
+    [_krBPN addPatternWeights:@[@-0.5, @0.2]];
+    [_krBPN addPatternWeights:@[@-0.1, @0.3]];
     
-    //隱藏層神經元的偏權值 & 隱藏層神經元到輸出層神經元的權重值
     //Add Hidden Layer biases of nets and the output weights in connect with output layer.
-    [_krBPN addHiddenLayerNetBias:-0.4f outputWeights:@[@-0.3f, @0.2f]]; //Net 5 bias, W57, W58 to output layer
-    [_krBPN addHiddenLayerNetBias:0.2f outputWeights:@[@-0.2f, @0.5f]];  //Net 6 bias, W67, W68 to output layer
+    [_krBPN addHiddenLayerNetBias:-0.4f outputWeights:@[@-0.3f, @0.2f]];
+    [_krBPN addHiddenLayerNetBias:0.2f outputWeights:@[@-0.2f, @0.5f]];
     
-    //輸出層神經元偏權值, Net 7, 8
     //Add the output layer biases
     [_krBPN addOutputBiases:@[@0.0f, @0.1f]];
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
-    //訓練完成時( Training complete )
     [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
         if( success )
         {
-            NSLog(@"Training done with total times : %i", totalTimes);
-            NSLog(@"TrainedInfo 1 : %@", trainedInfo);
+            NSLog(@"Training done with total times : %li", totalTimes);
+            NSLog(@"TrainedInfo : %@", trainedInfo);
             
             //Start in checking the network is correctly trained.
             NSLog(@"======== Start in Verification ========");
+            
             [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
-                NSLog(@"Training done with total times : %i", totalTimes);
-                NSLog(@"TrainedInfo 2 : %@", trainedInfo);
+                NSLog(@"Training done with total times : %li", totalTimes);
+                NSLog(@"Verified TrainedInfo : %@", trainedInfo);
             }];
             
             [_weakKrBPN recoverNetwork];
@@ -74,23 +71,24 @@
 {
     _krBPN.activeFunction = KRBPNActivationByTanh;
     
-    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f]];      //Pattern 1
-    [_krBPN addPatterns:@[@-0.5, @0.8, @-0.3, @0.9] outputGoals:@[@-0.1f]]; //Pattern 2
-    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.9f]];      //Pattern 3
+    [_krBPN addPatterns:@[@1, @0.1, @0.5, @0.2] outputGoals:@[@0.7f]];
+    [_krBPN addPatterns:@[@-0.5, @0.8, @0.3, @0.9] outputGoals:@[@-0.1f]];
+    [_krBPN addPatterns:@[@1, @0.3, @0.1, @0.4] outputGoals:@[@0.9f]];
+    
+    _krBPN.hiddenNets = 5; // Set how many hidden-nets to use
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
-    //訓練完成時( Training complete )
     [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
         if( success )
         {
-            NSLog(@"Training done with total times : %i", totalTimes);
-            NSLog(@"TrainedInfo 1 : %@", trainedInfo);
+            NSLog(@"Training done with total times : %li", totalTimes);
+            NSLog(@"TrainedInfo : %@", trainedInfo);
             
             //Start in checking the network is correctly trained.
             NSLog(@"======== Start in Verification ========");
             [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
-                NSLog(@"Training done with total times : %i", totalTimes);
-                NSLog(@"TrainedInfo 2 : %@", trainedInfo);
+                NSLog(@"Training done with total times : %li", totalTimes);
+                NSLog(@"Verified TrainedInfo : %@", trainedInfo);
             }];
             
             [_weakKrBPN recoverNetwork];
@@ -106,152 +104,95 @@
 {
     _krBPN.activeFunction = KRBPNActivationBySigmoid;
     
-    //1
-    [_krBPN addPatterns:@[@0, @0, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @0, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @1, @1]
+    // Number 1
+    [_krBPN addPatterns:@[@0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0,
+                          @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0,
+                          @0, @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1]
             outputGoals:@[@1, @0, @0, @0, @0, @0, @0, @0, @0, @0]];
-    //2
-    [_krBPN addPatterns:@[@1, @0, @0, @0,
-                          @1, @1, @1, @1,
-                          @1, @1, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @1, @1, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @1, @1,
-                          @1, @1, @1, @1,
-                          @0, @0, @0, @1]
+    
+    // Number 2
+    [_krBPN addPatterns:@[@1, @0, @0, @0, @1, @1, @1, @1, @1, @1, @0, @0,
+                          @0, @1, @0, @0, @0, @1, @1, @0, @0, @0, @1, @0,
+                          @0, @0, @1, @1, @1, @1, @1, @1, @0, @0, @0, @1]
             outputGoals:@[@0, @1, @0, @0, @0, @0, @0, @0, @0, @0]];
-    //3
-    [_krBPN addPatterns:@[@1, @0, @0, @0,
-                          @1, @0, @0, @0,
-                          @1, @1, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @1, @1, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @1, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 3
+    [_krBPN addPatterns:@[@1, @0, @0, @0, @1, @0, @0, @0, @1, @1, @0, @0,
+                          @0, @1, @0, @0, @0, @1, @1, @0, @0, @0, @1, @0,
+                          @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @1, @0, @0, @0, @0, @0, @0, @0]];
-    //4
-    [_krBPN addPatterns:@[@1, @1, @1, @1,
-                          @1, @0, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @0, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 4
+    [_krBPN addPatterns:@[@1, @1, @1, @1, @1, @0, @0, @0, @0, @0, @0, @0,
+                          @0, @1, @0, @0, @0, @0, @0, @0, @0, @0, @1, @0,
+                          @0, @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @0, @1, @0, @0, @0, @0, @0, @0]];
-    //5
-    [_krBPN addPatterns:@[@1, @1, @1, @1,
-                          @1, @0, @0, @0,
-                          @1, @1, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @1, @1, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @1, @1,
-                          @0, @0, @0, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 5
+    [_krBPN addPatterns:@[@1, @1, @1, @1, @1, @0, @0, @0, @1, @1, @0, @0,
+                          @0, @1, @0, @0, @0, @1, @1, @0, @0, @0, @1, @0,
+                          @0, @0, @1, @1, @0, @0, @0, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @0, @0, @1, @0, @0, @0, @0, @0]];
-    //6
-    [_krBPN addPatterns:@[@1, @1, @1, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @1, @1, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @1, @1,
-                          @0, @0, @0, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 6
+    [_krBPN addPatterns:@[@1, @1, @1, @1, @1, @1, @1, @1, @1, @1, @0, @0,
+                          @0, @1, @0, @0, @0, @1, @1, @0, @0, @0, @1, @0,
+                          @0, @0, @1, @1, @0, @0, @0, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @0, @0, @0, @1, @0, @0, @0, @0]];
-    //7
-    [_krBPN addPatterns:@[@1, @0, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @0, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 7
+    [_krBPN addPatterns:@[@1, @0, @0, @0, @0, @0, @0, @0, @0, @1, @0, @0,
+                          @0, @0, @0, @0, @0, @0, @1, @0, @0, @0, @0, @0,
+                          @0, @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @0, @0, @0, @0, @1, @0, @0, @0]];
-    //8
-    [_krBPN addPatterns:@[@1, @1, @1, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @1, @1, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @1, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 8
+    [_krBPN addPatterns:@[@1, @1, @1, @1, @1, @1, @1, @1, @1, @1, @0, @0,
+                          @0, @1, @0, @0, @0, @1, @1, @0, @0, @0, @1, @0,
+                          @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @0, @0, @0, @0, @0, @1, @0, @0]];
-    //9
-    [_krBPN addPatterns:@[@1, @1, @1, @1,
-                          @1, @0, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @1, @0, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @1, @0,
-                          @0, @0, @0, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 9
+    [_krBPN addPatterns:@[@1, @1, @1, @1, @1, @0, @0, @0, @0, @1, @0, @0,
+                          @0, @1, @0, @0, @0, @0, @1, @0, @0, @0, @1, @0,
+                          @0, @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @0, @0, @0, @0, @0, @0, @1, @0]];
-    //0
-    [_krBPN addPatterns:@[@1, @1, @1, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @0, @0,
-                          @0, @0, @0, @0,
-                          @0, @1, @1, @0,
-                          @0, @0, @0, @0,
-                          @0, @0, @1, @1,
-                          @1, @1, @1, @1,
-                          @1, @1, @1, @1]
+    
+    // Number 0
+    [_krBPN addPatterns:@[@1, @1, @1, @1, @1, @1, @1, @1, @1, @1, @0, @0,
+                          @0, @0, @0, @0, @0, @1, @1, @0, @0, @0, @0, @0,
+                          @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1, @1]
             outputGoals:@[@0, @0, @0, @0, @0, @0, @0, @0, @0, @1]];
     
     __block typeof(_krBPN) _weakKrBPN = _krBPN;
-    //訓練完成時( Training complete )
     [_krBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
         if( success )
         {
             NSLog(@"Training done with total times : %i", totalTimes);
-            NSLog(@"TrainedInfo 1 : %@", trainedInfo);
+            NSLog(@"TrainedInfo : %@", trainedInfo);
             
             //Start in checking the network is correctly trained.
             NSLog(@"======== Start in Verification ========");
+            
             [_weakKrBPN setTrainingCompletion:^(BOOL success, NSDictionary *trainedInfo, NSInteger totalTimes){
                 NSLog(@"Training done with total times : %i", totalTimes);
-                NSLog(@"TrainedInfo 2 : %@", trainedInfo);
+                NSLog(@"Verified TrainedInfo : %@", trainedInfo);
             }];
             
             [_weakKrBPN recoverNetwork];
+            
             //Verified number " 7 ", and it has some defects.
-            [_weakKrBPN directOutputAtInputs:@[@1, @1, @1, @0,
-                                               @0, @0, @0, @0,
-                                               @0, @1, @0, @0,
-                                               @0, @0, @0, @0,
-                                               @0, @0, @1, @0,
-                                               @0, @0, @0, @0,
-                                               @0, @0, @0, @1,
-                                               @1, @1, @1, @1,
-                                               @1, @1, @1, @1]];
+            [_weakKrBPN directOutputAtInputs:@[@1, @1, @1, @0, @0, @0, @0, @0, @0, @1, @0, @0,
+                                               @0, @0, @0, @0, @0, @0, @1, @0, @0, @0, @0, @0,
+                                               @0, @0, @0, @1, @1, @1, @1, @1, @1, @1, @1, @1]];
             
         }
     }];
     
     [_krBPN trainingByRandomSettings];
-    //[_krBPN trainingRandomAndSave];
 }
 
-//Medical prediction of cancer, 醫療癌症預測
+// To forecast survival rate in medical of cancer. (癌症醫療存活率預測)
 -(void)useSample4
 {
     _krBPN.activeFunction = KRBPNActivationBySigmoid;
@@ -347,9 +288,7 @@
         }
     }];
     
-    
-    [_krBPN training];
-    //[_krBPN trainingByRandomSettings];
+    [_krBPN trainingByRandomSettings];
 }
 
 - (void)viewDidLoad
@@ -393,12 +332,12 @@
     //[self useSample2];
     
     // Only setup patterns and output goals, then learning to identify numbers 0 to 9.
-    [self useSample3];
+    //[self useSample3];
     
     // 醫療數據預測
     //[self useSample4];
     
-    //[self useSample5];
+    [self useSample5];
     
     //Start the training, and random the weights, biases, if you use this method that you won't need to setup any weights and biases before.
     //Random means let network to auto setup inputWeights, hiddenBiases, hiddenWeights values.

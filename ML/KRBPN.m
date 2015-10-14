@@ -69,6 +69,7 @@
     self.limitIteration      = 0;
     self.isTraining          = NO;
     self.trainedInfo         = nil;
+    self.hiddenNets          = 1;
     
     self.trainingCompletion  = nil;
     self.eachIteration       = nil;
@@ -868,7 +869,7 @@
         _outputNetCount = 1;
     }
     //輸入層到隱藏層的輸入層 Net 數量 = ( (輸入層的 Net 數 * 輸出層 Net 數) ^ 1/2  )
-    NSInteger _hiddenNetCount = (int)powf(( _inputNetCount * _outputNetCount ), 0.5f); //_inputNetCount;
+    NSInteger _hiddenNetCount = _hiddenNets > 1 ? _hiddenNets : (int)powf(( _inputNetCount * _outputNetCount ), 0.5f);
     if( _hiddenNetCount < 1 )
     {
         //最少 1 顆
