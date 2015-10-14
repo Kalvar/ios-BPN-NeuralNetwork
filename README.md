@@ -18,7 +18,6 @@ pod "KRBPN", "~> 2.0.6"
 
 ``` objective-c
 #import "KRBPN.h"
-KRBPN *_krBPN = [KRBPN sharedNetwork];
 ```
 
 ##### Common Settings
@@ -144,7 +143,7 @@ __block typeof(_krBPN) _weakKrBPN = _krBPN;
 
 ##### Sample 3
 
-To learn and verify numbers 0 to 9. And only setups patterns and output goals, and 10 outputs (outptus same as classified groups).
+Identify numbers 0 to 9, this training has 10 outputs (same as 10 classified groups). Number 1 is [1, 0, 0, 0, ..., 0], number 3 is [0, 0, 1, 0, ...., 0].
 
 ``` objective-c
 _krBPN.activeFunction = KRBPNActivationBySigmoid;
