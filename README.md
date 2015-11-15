@@ -14,13 +14,13 @@ pod "KRBPN", "~> 2.0.6"
 
 ## How to use
 
-##### Import & Create
+#### Import
 
 ``` objective-c
 #import "KRBPN.h"
 ```
 
-##### Common Settings
+#### Common Settings
 
 ``` objective-c
 // Use singleton or [[KRBPN alloc] init]
@@ -57,7 +57,7 @@ _krBPN.learningMode = KRBPNLearningModeByQuickPropSmartHybrid;
 }];
 ```
 
-##### Sample 1
+#### Sample 1
 
 To use Sigmoid active function and customize all weights & biases.
 
@@ -107,7 +107,7 @@ __block typeof(_krBPN) _weakKrBPN = _krBPN;
 [_krBPN training];
 ```
 
-##### Sample 2
+#### Sample 2
 
 This sample used tanh() that range in [-1.0, 1.0] an active function, and we directly random all settings (weights, biases, net counts).
 
@@ -141,7 +141,7 @@ __block typeof(_krBPN) _weakKrBPN = _krBPN;
 [_krBPN trainingByRandomSettings];
 ```
 
-##### Sample 3
+#### Sample 3
 
 Identify numbers 0 to 9, this training has 10 outputs (same as 10 classified groups). Number 1 is [1, 0, 0, 0, ..., 0], number 3 is [0, 0, 1, 0, ...., 0].
 
@@ -236,7 +236,7 @@ __block typeof(_krBPN) _weakKrBPN = _krBPN;
 [_krBPN trainingByRandomSettings];
 ```
 
-##### Sample 4
+#### Sample 4
 
 To forecast survival rate in medical of cancer. (癌症醫療存活率預測)
 
