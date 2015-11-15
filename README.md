@@ -3,7 +3,7 @@ ios-BPN-NeuralNetwork
 
 Machine Learning (マシンラーニング) in this project, it implemented 3 layers ( Input Layer, Hidden Layer and Output Layer ) neural network (ニューラルネットワーク) and implemented Back Propagation Neural Network (BPN), QuickProp theory and Kecman's theory (EDBD). KRBPN can be used in products recommendation (おすすめの商品), user behavior analysis (ユーザーの行動分析), data mining (データマイニング) and data analysis (データ分析).
 
-This project designed for quickly operation for mobile device perform the basic data analysis. If you need help to know how to use this network, just ask me via email.
+This project designed for quickly operation for mobile device perform the basic data analysis. 
 
 #### Podfile
 
